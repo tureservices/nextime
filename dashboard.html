@@ -6,7 +6,10 @@
   <title>NexTime - Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style> body { font-family: 'Inter', sans-serif; } </style>
+  <style> 
+    body { font-family: 'Inter', sans-serif; } 
+    .fade-out { opacity: 0; transition: opacity 0.3s ease-out; }
+  </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
 
@@ -56,22 +59,29 @@
       </div>
     </div>
 
-    <!-- Alert Box -->
-    <div id="dashAlert" class="hidden mb-4 p-3 rounded-lg text-xs font-medium"></div>
+    <!-- Alert Box (Auto-dismisses in 2s) -->
+    <div id="dashAlert" class="hidden mb-4 p-3 rounded-lg text-xs font-medium transition-all duration-300"></div>
 
-    <!-- Tab 1: Pending Approvals -->
+    <!-- Tab 1: Persetujuan Tertunda -->
     <div id="viewPending" class="space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h2 class="font-bold text-sm text-slate-800">Menunggu Persetujuan</h2>
-          <button onclick="loadDashboardData()" class="text-xs text-blue-600 hover:underline">Refresh Data</button>
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <h2 class="font-bold text-sm text-slate-800">Menunggu Persetujuan</h2>
+            <button onclick="loadDashboardData()" class="text-xs text-blue-600 hover:underline">Refresh Data</button>
+          </div>
+          <!-- Real-Time Search for Tab 1 -->
+          <div class="w-full sm:w-72">
+            <input type="text" id="searchPending" oninput="renderPendingTable()" placeholder="Cari Employee ID, Nama, Tipe..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
               <tr>
                 <th class="p-3">Tipe</th>
-                <th class="p-3">Karyawan</th>
+                <th class="p-3">Employee ID</th>
+                <th class="p-3">Nama Karyawan</th>
                 <th class="p-3">Detail</th>
                 <th class="p-3">Tanggal / Waktu</th>
                 <th class="p-3">Alasan</th>
@@ -79,25 +89,29 @@
               </tr>
             </thead>
             <tbody id="pendingTableBody" class="divide-y divide-slate-100">
-              <tr><td colspan="6" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
+              <tr><td colspan="7" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- Tab 2: Leave History -->
+    <!-- Tab 2: Riwayat Cuti -->
     <div id="viewLeave" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100">
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="font-bold text-sm text-slate-800">Semua Catatan Cuti</h2>
+          <!-- Real-Time Search for Tab 2 -->
+          <div class="w-full sm:w-72">
+            <input type="text" id="searchLeave" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Jenis Cuti..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
               <tr>
-                <th class="p-3">ID</th>
-                <th class="p-3">Karyawan</th>
+                <th class="p-3">Employee ID</th>
+                <th class="p-3">Nama Karyawan</th>
                 <th class="p-3">Jenis Cuti</th>
                 <th class="p-3">Periode</th>
                 <th class="p-3">Total Hari</th>
@@ -110,18 +124,22 @@
       </div>
     </div>
 
-    <!-- Tab 3: Overtime History -->
+    <!-- Tab 3: Riwayat Lembur -->
     <div id="viewOvertime" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100">
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="font-bold text-sm text-slate-800">Semua Catatan Lembur</h2>
+          <!-- Real-Time Search for Tab 3 -->
+          <div class="w-full sm:w-72">
+            <input type="text" id="searchOvertime" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Tipe Hari..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
               <tr>
-                <th class="p-3">ID</th>
-                <th class="p-3">Karyawan</th>
+                <th class="p-3">Employee ID</th>
+                <th class="p-3">Nama Karyawan</th>
                 <th class="p-3">Tanggal</th>
                 <th class="p-3">Jam Kerja</th>
                 <th class="p-3">Tipe Hari</th>
@@ -135,10 +153,28 @@
     </div>
   </main>
 
+  <!-- MODAL: DESKTOP-STYLE CONFIRMATION DIALOG (Replaces window.confirm) -->
+  <div id="modalConfirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-slate-100 overflow-hidden p-6 text-center transform transition-all">
+      <div id="confirmIconBox" class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center">
+        <!-- Dynamic SVG Icon -->
+      </div>
+      <h3 id="confirmTitle" class="text-sm font-bold text-slate-900 mb-1">Konfirmasi Persetujuan</h3>
+      <p id="confirmDesc" class="text-xs text-slate-500 mb-5">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+      <div class="flex space-x-2">
+        <button type="button" onclick="closeConfirmModal()" class="w-1/2 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+          Batal
+        </button>
+        <button type="button" id="btnConfirmAction" class="w-1/2 py-2 rounded-lg text-xs font-semibold text-white shadow transition">
+          Ya, Lanjutkan
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: LEAVE REQUESTS FORM (AppSheet Replica) -->
   <div id="modalLeave" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
-      <!-- Modal Header (Matching AppSheet Pic 1) -->
       <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/50">
         <div class="flex items-center space-x-2">
           <button type="button" onclick="closeModal('modalLeave')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
@@ -150,19 +186,15 @@
         </div>
       </div>
 
-      <!-- Form Body -->
       <div class="p-6 overflow-y-auto space-y-4 text-xs">
         <form id="formLeaveActual" onsubmit="submitLeave(event)" class="space-y-3.5">
-          <!-- 1. Employee ID (Searchable Combobox) -->
           <div class="relative">
             <label class="block font-semibold text-slate-700 mb-1">Employee ID <span class="text-blue-600">*</span></label>
             <input type="text" id="leaveEmpInput" placeholder="Cari" autocomplete="off" oninput="onEmpSearchInput('leave')" onfocus="showEmpDropdown('leave')" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
             <input type="hidden" id="leaveEmpIdSelected" required>
-            <!-- Dropdown Options Panel -->
             <div id="leaveEmpDropdownPanel" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg z-50 divide-y divide-slate-100"></div>
           </div>
 
-          <!-- Employee Info Badge -->
           <div id="leaveEmpBadge" class="hidden bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
             <div class="flex justify-between">
               <span>Nama: <strong id="lblLeaveEmpName">-</strong></span>
@@ -173,7 +205,6 @@
             </div>
           </div>
 
-          <!-- 2. Start Date & End Date -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1">Start Date <span class="text-blue-600">*</span></label>
@@ -185,19 +216,16 @@
             </div>
           </div>
 
-          <!-- 3. Total Days -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Total Days</label>
             <input type="text" id="leaveTotalDays" value="0.00" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">
           </div>
 
-          <!-- 4. Leave Type -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Leave Type <span class="text-blue-600">*</span></label>
             <select id="leaveTypeSelect" required onchange="onDateOrTypeChange()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white"></select>
           </div>
 
-          <!-- 5. Request Type (Full day / Half day) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Request Type <span class="text-blue-600">*</span></label>
             <select id="leaveReqType" required onchange="onDateOrTypeChange()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white">
@@ -207,31 +235,26 @@
             </select>
           </div>
 
-          <!-- 6. Reason -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Reason <span class="text-blue-600">*</span></label>
             <input type="text" id="leaveReason" required placeholder="Tulis alasan pengajuan cuti..." class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
           </div>
 
-          <!-- 7. Status Approval (Readonly) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Status Approval</label>
             <input type="text" value="Pending" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500">
           </div>
 
-          <!-- 8. Tanggal Pengajuan -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Tanggal Pengajuan</label>
             <input type="text" id="leaveTanggalPengajuan" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
           </div>
 
-          <!-- 9. Deduction from Leave Balance (Hari) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Deduction from Leave Balance (Hari)</label>
             <input type="text" id="leaveDeductionDisplay" value="0.0" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
           </div>
 
-          <!-- Hidden Submit for Simpan button -->
           <button type="submit" class="hidden"></button>
         </form>
       </div>
@@ -319,6 +342,21 @@
     document.getElementById("leaveTanggalPengajuan").value = formattedToday;
 
     let appData = { employees: [], policies: [], leaveRequests: [], overtimeRecords: [] };
+    let alertTimeout = null;
+
+    // Check if user role has approval authorization
+    function isAuthorizedApprover(role) {
+      if (!role) return false;
+      const clean = String(role).trim().toLowerCase();
+      return [
+        "admin",
+        "administrator",
+        "hr",
+        "factory manager",
+        "sample manager",
+        "supervisor"
+      ].includes(clean);
+    }
 
     async function callApi(payload) {
       const res = await fetch(API_URL, {
@@ -330,13 +368,22 @@
       return await res.json();
     }
 
+    // ── Global Alert with 2-Second Auto-Dismiss ──
     function showDashAlert(type, msg) {
       const box = document.getElementById("dashAlert");
-      box.className = `mb-4 p-3 rounded-lg text-xs font-medium ${
+      if (alertTimeout) clearTimeout(alertTimeout);
+
+      box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all duration-300 ${
         type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
       }`;
       box.textContent = msg;
-      box.classList.remove("hidden");
+      box.classList.remove("hidden", "fade-out");
+
+      // Auto-disappear after exactly 2 seconds (2000ms)
+      alertTimeout = setTimeout(() => {
+        box.classList.add("fade-out");
+        setTimeout(() => box.classList.add("hidden"), 300);
+      }, 2000);
     }
 
     function logout() {
@@ -417,7 +464,6 @@
       }
     }
 
-    // Close dropdown when clicking outside
     document.addEventListener("click", function(e) {
       ["leave", "ot"].forEach(p => {
         const input = document.getElementById(`${p}EmpInput`);
@@ -440,14 +486,12 @@
       let totalDays = 0.00;
 
       if (reqType.startsWith("Half day")) {
-        // Half day locks End Date to Start Date and forces 0.50
         if (start) {
           document.getElementById("leaveEnd").value = start;
           end = start;
         }
         totalDays = 0.50;
       } else {
-        // Full day: calculate difference + 1
         if (start && end) {
           const d1 = new Date(start);
           const d2 = new Date(end);
@@ -457,13 +501,11 @@
       }
       totalDaysInput.value = totalDays.toFixed(2);
 
-      // Calculate AL Deduction live
       let deduction = 0.00;
       const policy = appData.policies.find(p => p.type === selectedType);
       const allowed = policy ? policy.allowedDays : 0;
 
       if (allowed > 0) {
-        // Additional Leave: only deduct if employee exceeds policy quota
         deduction = Math.max(0, totalDays - allowed);
       } else {
         const lower = (selectedType || "").toLowerCase();
@@ -472,7 +514,6 @@
         } else if (lower.includes("medical checkup") && lower.includes("dengan surat dokter")) {
           deduction = 0.00;
         } else {
-          // Personal Matter / standard leave takes directly from Annual Leave
           deduction = totalDays;
         }
       }
@@ -486,7 +527,6 @@
         if (res.status === "success") {
           appData = res;
           
-          // Populate Leave Policies Dropdown
           const polSelect = document.getElementById("leaveTypeSelect");
           polSelect.innerHTML = '<option value="">-- Pilih Leave Type --</option>' + 
             appData.policies.map(p => `<option value="${p.type}">${p.type} ${p.allowedDays > 0 ? '(' + p.allowedDays + ' Hari)' : ''}</option>`).join("");
@@ -501,15 +541,32 @@
       }
     }
 
-    // Render Tables
+    // ── Render Tab 1: Persetujuan Tertunda (With Search Filter) ──
     function renderPendingTable() {
       const tbody = document.getElementById("pendingTableBody");
-      const canApprove = (currentUser.role === "Admin" || currentUser.role === "Supervisor");
-      const pendingLeave = appData.leaveRequests.filter(r => r.status === "Pending");
-      const pendingOt = appData.overtimeRecords.filter(r => r.status === "Pending");
+      const canApprove = isAuthorizedApprover(currentUser.role);
+      const query = (document.getElementById("searchPending")?.value || "").toLowerCase();
+
+      let pendingLeave = appData.leaveRequests.filter(r => r.status === "Pending");
+      let pendingOt = appData.overtimeRecords.filter(r => r.status === "Pending");
+
+      if (query) {
+        pendingLeave = pendingLeave.filter(r => 
+          r.employeeId.toLowerCase().includes(query) || 
+          r.employeeName.toLowerCase().includes(query) || 
+          r.leaveType.toLowerCase().includes(query) ||
+          r.reason.toLowerCase().includes(query)
+        );
+        pendingOt = pendingOt.filter(r => 
+          r.employeeId.toLowerCase().includes(query) || 
+          r.employeeName.toLowerCase().includes(query) || 
+          r.dayType.toLowerCase().includes(query) ||
+          r.reason.toLowerCase().includes(query)
+        );
+      }
 
       if (pendingLeave.length === 0 && pendingOt.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada pengajuan yang menunggu persetujuan.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada pengajuan yang cocok dengan pencarian.</td></tr>';
         return;
       }
 
@@ -518,15 +575,16 @@
         html += `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">CUTI</span></td>
-            <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.employeeId} - ${r.rules}</span></td>
+            <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
+            <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.rules}</span></td>
             <td class="p-3">${r.leaveType}<br><span class="text-slate-400 font-medium">${r.totalDays} Hari (${r.requestType})</span></td>
             <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
             <td class="p-3">${r.reason}</td>
             <td class="p-3 text-right">
               ${canApprove ? `
                 <div class="inline-flex space-x-1">
-                  <button onclick="processApproval('leave', '${r.leaveId}', 'Disetujui')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-medium">Setujui</button>
-                  <button onclick="processApproval('leave', '${r.leaveId}', 'Ditolak')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded font-medium">Tolak</button>
+                  <button onclick="requestApprovalConfirmation('leave', '${r.leaveId}', 'Disetujui', '${r.employeeName}', '${r.employeeId}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-medium">Setujui</button>
+                  <button onclick="requestApprovalConfirmation('leave', '${r.leaveId}', 'Ditolak', '${r.employeeName}', '${r.employeeId}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded font-medium">Tolak</button>
                 </div>
               ` : '<span class="text-slate-400 italic">Menunggu Review</span>'}
             </td>
@@ -538,15 +596,16 @@
         html += `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">LEMBUR</span></td>
-            <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.employeeId} - ${r.rules}</span></td>
+            <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
+            <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.rules}</span></td>
             <td class="p-3">${r.dayType}</td>
             <td class="p-3">${r.date}<br><span class="text-slate-400 font-medium">${r.startTime} - ${r.endTime}</span></td>
             <td class="p-3">${r.reason}</td>
             <td class="p-3 text-right">
               ${canApprove ? `
                 <div class="inline-flex space-x-1">
-                  <button onclick="processApproval('overtime', '${r.overtimeId}', 'Disetujui')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded font-medium">Setujui</button>
-                  <button onclick="processApproval('overtime', '${r.overtimeId}', 'Ditolak')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded font-medium">Tolak</button>
+                  <button onclick="requestApprovalConfirmation('overtime', '${r.overtimeId}', 'Disetujui', '${r.employeeName}', '${r.employeeId}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded font-medium">Setujui</button>
+                  <button onclick="requestApprovalConfirmation('overtime', '${r.overtimeId}', 'Ditolak', '${r.employeeName}', '${r.employeeId}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded font-medium">Tolak</button>
                 </div>
               ` : '<span class="text-slate-400 italic">Menunggu Review</span>'}
             </td>
@@ -557,37 +616,70 @@
       tbody.innerHTML = html;
     }
 
+    // ── Render Tabs 2 & 3: Riwayat Cuti & Riwayat Lembur (With Search Filters) ──
     function renderHistoryTables() {
+      // Tab 2: Leave History
+      const lQuery = (document.getElementById("searchLeave")?.value || "").toLowerCase();
+      let leaves = appData.leaveRequests;
+      if (lQuery) {
+        leaves = leaves.filter(r => 
+          r.employeeId.toLowerCase().includes(lQuery) || 
+          r.employeeName.toLowerCase().includes(lQuery) || 
+          r.leaveType.toLowerCase().includes(lQuery) ||
+          r.status.toLowerCase().includes(lQuery)
+        );
+      }
+
       const lBody = document.getElementById("leaveTableBody");
-      lBody.innerHTML = appData.leaveRequests.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3 font-mono">${r.leaveId}</td>
-          <td class="p-3"><strong>${r.employeeName}</strong> (${r.employeeId})</td>
-          <td class="p-3">${r.leaveType}</td>
-          <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
-          <td class="p-3">${r.totalDays} Hari</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-            r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
-          }">${r.status}</span></td>
-        </tr>
-      `).join("");
+      if (leaves.length === 0) {
+        lBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada riwayat cuti yang cocok.</td></tr>';
+      } else {
+        lBody.innerHTML = leaves.map(r => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
+            <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
+            <td class="p-3">${r.leaveType}</td>
+            <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
+            <td class="p-3">${r.totalDays} Hari</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
+            }">${r.status}</span></td>
+          </tr>
+        `).join("");
+      }
+
+      // Tab 3: Overtime History
+      const otQuery = (document.getElementById("searchOvertime")?.value || "").toLowerCase();
+      let overtimes = appData.overtimeRecords;
+      if (otQuery) {
+        overtimes = overtimes.filter(r => 
+          r.employeeId.toLowerCase().includes(otQuery) || 
+          r.employeeName.toLowerCase().includes(otQuery) || 
+          r.dayType.toLowerCase().includes(otQuery) ||
+          r.status.toLowerCase().includes(otQuery)
+        );
+      }
 
       const otBody = document.getElementById("overtimeTableBody");
-      otBody.innerHTML = appData.overtimeRecords.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3 font-mono">${r.overtimeId}</td>
-          <td class="p-3"><strong>${r.employeeName}</strong> (${r.employeeId})</td>
-          <td class="p-3">${r.date}</td>
-          <td class="p-3">${r.startTime} - ${r.endTime}</td>
-          <td class="p-3">${r.dayType}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-            r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
-          }">${r.status}</span></td>
-        </tr>
-      `).join("");
+      if (overtimes.length === 0) {
+        otBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada riwayat lembur yang cocok.</td></tr>';
+      } else {
+        otBody.innerHTML = overtimes.map(r => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
+            <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
+            <td class="p-3">${r.date}</td>
+            <td class="p-3">${r.startTime} - ${r.endTime}</td>
+            <td class="p-3">${r.dayType}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
+            }">${r.status}</span></td>
+          </tr>
+        `).join("");
+      }
     }
 
-    // Submit Leave
+    // ── Submit Handlers ──
     async function submitLeave(e) {
       e.preventDefault();
       const empId = document.getElementById("leaveEmpIdSelected").value;
@@ -618,7 +710,6 @@
       }
     }
 
-    // Submit Overtime
     async function submitOvertime(e) {
       e.preventDefault();
       const empId = document.getElementById("otEmpIdSelected").value;
@@ -646,10 +737,54 @@
       }
     }
 
-    // Process Approval & WhatsApp Dispatcher
-    async function processApproval(type, recordId, decision) {
-      if (!confirm(`Konfirmasi: Ubah status menjadi ${decision}?`)) return;
+    // ── Desktop-Style Centered Confirmation Modal ──
+    let pendingApprovalAction = null;
 
+    function requestApprovalConfirmation(type, recordId, decision, employeeName, employeeId) {
+      const modal = document.getElementById("modalConfirm");
+      const title = document.getElementById("confirmTitle");
+      const desc = document.getElementById("confirmDesc");
+      const iconBox = document.getElementById("confirmIconBox");
+      const btnAction = document.getElementById("btnConfirmAction");
+
+      const isApprove = decision === "Disetujui";
+      title.textContent = isApprove ? "Konfirmasi Persetujuan" : "Konfirmasi Penolakan";
+      desc.innerHTML = `Ubah status pengajuan ${type === 'leave' ? 'cuti' : 'lembur'} untuk <strong>${employeeName}</strong> (${employeeId}) menjadi <strong>${decision}</strong>?`;
+
+      if (isApprove) {
+        iconBox.className = "w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-blue-100 text-blue-600";
+        iconBox.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        btnAction.className = "w-1/2 py-2 rounded-lg text-xs font-semibold text-white shadow bg-blue-600 hover:bg-blue-700 transition";
+        btnAction.textContent = "Ya, Setujui";
+      } else {
+        iconBox.className = "w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-rose-100 text-rose-600";
+        iconBox.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        btnAction.className = "w-1/2 py-2 rounded-lg text-xs font-semibold text-white shadow bg-rose-600 hover:bg-rose-700 transition";
+        btnAction.textContent = "Ya, Tolak";
+      }
+
+      pendingApprovalAction = () => executeApproval(type, recordId, decision);
+
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById("modalConfirm");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      pendingApprovalAction = null;
+    }
+
+    document.getElementById("btnConfirmAction").addEventListener("click", function() {
+      if (pendingApprovalAction) {
+        const action = pendingApprovalAction;
+        closeConfirmModal();
+        action();
+      }
+    });
+
+    async function executeApproval(type, recordId, decision) {
       try {
         const res = await callApi({
           action: "processApproval",

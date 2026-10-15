@@ -301,35 +301,71 @@
     </div>
   </div>
 
-  <script>
+ <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxO0spFhKspoBXznN-fKjbRtdP6R4mnCdLNxiX4oUhD4dRZEVjpfwY392b-nvbPtzQw/exec";
 
-// Updated RBAC Guard (Permissive to Admin, Administrator, and Supervisor)
-const userStr = localStorage.getItem("nextime_user");
-if (!userStr) window.location.href = "index.html";
-const currentUser = JSON.parse(userStr);
+    // ── Application State ──
+    let masterData = { employees: [], policies: [], users: [], leaveRequests: [], overtimeRecords: [] };
+    let activeReportTab = 'leave';
+    let currentFilteredReport = [];
+    let parsedCsvBuffer = [];
+    let alertTimer = null;
 
-const userRoleClean = String(currentUser.role || "").trim().toLowerCase();
-if (!["admin", "administrator"].includes(userRoleClean)) {
-  alert("Akses Terbatas: Anda tidak memiliki akses ke halaman ini.");
-  window.location.href = "dashboard.html";
-}
+    // ── RBAC Guard ──
+    const userStr = localStorage.getItem("nextime_user");
+    if (!userStr) window.location.href = "index.html";
+    const currentUser = JSON.parse(userStr);
 
-// Updated Alert Function: Error alerts NEVER auto-dismiss
-function showAlert(type, msg) {
-  const box = document.getElementById("adminAlert");
-  box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all ${
-    type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-  }`;
-  box.textContent = msg;
-  box.classList.remove("hidden");
-  
-  // Only auto-dismiss green success alerts; keep red errors visible so you can inspect them
-  if (type !== 'error') {
-    setTimeout(() => box.classList.add("hidden"), 3500);
-  }
-}
+    const userRoleClean = String(currentUser.role || "").trim().toLowerCase();
+    if (!["admin", "administrator"].includes(userRoleClean)) {
+      alert("Akses Terbatas: Anda tidak memiliki akses ke halaman ini.");
+      window.location.href = "dashboard.html";
+    }
 
+    // ── Unified API Client (SaaS Preflight Bypass for Apps Script) ──
+    async function callApi(payload) {
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8" // Prevents CORS OPTIONS preflight block
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+      } catch (err) {
+        console.error("API Call Failure:", err);
+        throw err;
+      }
+    }
+
+    // ── Alert Notification (Auto-dismisses in 2 seconds) ──
+    function showAlert(type, msg) {
+      const box = document.getElementById("adminAlert");
+      if (!box) return;
+
+      if (alertTimer) clearTimeout(alertTimer);
+
+      box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all ${
+        type === 'error'
+          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+      }`;
+      box.textContent = msg;
+      box.classList.remove("hidden");
+
+      // Auto dismiss after 2 seconds
+      alertTimer = setTimeout(() => {
+        box.classList.add("hidden");
+      }, 2000);
+    }
+
+    // ── Tab Navigation ──
     function switchAdminTab(tab) {
       ["emp", "reports", "users", "pol"].forEach(t => {
         document.getElementById(`panel${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.toggle("hidden", t !== tab);
@@ -362,12 +398,13 @@ function showAlert(type, msg) {
       document.getElementById(id).classList.remove("hidden");
       document.getElementById(id).classList.add("flex");
     }
+
     function closeModal(id) {
       document.getElementById(id).classList.add("hidden");
       document.getElementById(id).classList.remove("flex");
     }
 
-    // ── Load All Master & Report Data ──
+    // ── Data Ingestion ──
     async function loadMasterData() {
       try {
         const res = await callApi({ action: "adminGetMasterData", email: currentUser.email, role: currentUser.role });
@@ -385,13 +422,13 @@ function showAlert(type, msg) {
       }
     }
 
-    // ── REPORT ENGINE: FILTERING, KPIS & RENDERING ──
+    // ── Report Engine ──
     function calculateOtHours(startStr, endStr) {
       if (!startStr || !endStr || !startStr.includes(":") || !endStr.includes(":")) return 0;
       const [h1, m1] = startStr.split(":").map(Number);
       const [h2, m2] = endStr.split(":").map(Number);
       let diffMin = (h2 * 60 + m2) - (h1 * 60 + m1);
-      if (diffMin < 0) diffMin += 24 * 60; // Crosses midnight
+      if (diffMin < 0) diffMin += 24 * 60;
       return diffMin / 60;
     }
 
@@ -408,22 +445,20 @@ function showAlert(type, msg) {
       if (activeReportTab === 'leave') {
         let records = masterData.leaveRequests || [];
 
-        // Apply Filters
         if (startFilter) records = records.filter(r => r.startDate >= startFilter);
         if (endFilter) records = records.filter(r => r.endDate <= endFilter);
-        if (statusFilter !== "ALL") records = records.filter(r => r.status.toLowerCase() === statusFilter.toLowerCase());
+        if (statusFilter !== "ALL") records = records.filter(r => (r.status || "").toLowerCase() === statusFilter.toLowerCase());
         if (q) {
           records = records.filter(r =>
-            r.employeeId.toLowerCase().includes(q) ||
-            r.employeeName.toLowerCase().includes(q) ||
-            r.leaveType.toLowerCase().includes(q) ||
-            r.reason.toLowerCase().includes(q)
+            (r.employeeId || "").toLowerCase().includes(q) ||
+            (r.employeeName || "").toLowerCase().includes(q) ||
+            (r.leaveType || "").toLowerCase().includes(q) ||
+            (r.reason || "").toLowerCase().includes(q)
           );
         }
 
         currentFilteredReport = records;
 
-        // Calculate KPIs
         const totalReq = records.length;
         const approvedReq = records.filter(r => r.status === "Disetujui");
         const totalApprovedDays = approvedReq.reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
@@ -474,7 +509,7 @@ function showAlert(type, msg) {
             <td class="p-3">${r.leaveType}<br><span class="text-slate-400 text-[11px]">${r.requestType}</span></td>
             <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
             <td class="p-3 text-right font-bold text-slate-800">${Number(r.totalDays).toFixed(1)}</td>
-            <td class="p-3 text-slate-600">${r.reason}</td>
+            <td class="p-3 text-slate-600">${r.reason || '-'}</td>
             <td class="p-3">${r.note ? `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">${r.note}</span>` : '-'}</td>
             <td class="p-3 text-center">
               <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -485,18 +520,17 @@ function showAlert(type, msg) {
         `).join("");
 
       } else {
-        // OVERTIME REPORT
         let records = masterData.overtimeRecords || [];
 
         if (startFilter) records = records.filter(r => r.date >= startFilter);
         if (endFilter) records = records.filter(r => r.date <= endFilter);
-        if (statusFilter !== "ALL") records = records.filter(r => r.status.toLowerCase() === statusFilter.toLowerCase());
+        if (statusFilter !== "ALL") records = records.filter(r => (r.status || "").toLowerCase() === statusFilter.toLowerCase());
         if (q) {
           records = records.filter(r =>
-            r.employeeId.toLowerCase().includes(q) ||
-            r.employeeName.toLowerCase().includes(q) ||
-            r.dayType.toLowerCase().includes(q) ||
-            r.reason.toLowerCase().includes(q)
+            (r.employeeId || "").toLowerCase().includes(q) ||
+            (r.employeeName || "").toLowerCase().includes(q) ||
+            (r.dayType || "").toLowerCase().includes(q) ||
+            (r.reason || "").toLowerCase().includes(q)
           );
         }
 
@@ -555,7 +589,7 @@ function showAlert(type, msg) {
               <td class="p-3">${r.startTime} - ${r.endTime}</td>
               <td class="p-3 text-right font-bold text-slate-800">${duration.toFixed(1)} Jam</td>
               <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-medium ${r.dayType && r.dayType.includes('Libur') ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'}">${r.dayType}</span></td>
-              <td class="p-3 text-slate-600">${r.reason}</td>
+              <td class="p-3 text-slate-600">${r.reason || '-'}</td>
               <td class="p-3 text-center">
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
                   r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
@@ -567,10 +601,10 @@ function showAlert(type, msg) {
       }
     }
 
-    // ── EXPORT FILTERED REPORT TO CSV ──
+    // ── Export CSV ──
     function exportCurrentReportCsv() {
-      if (currentFilteredReport.length === 0) {
-        return alert("Tidak ada data laporan untuk diexport sesuai filter yang dipilih.");
+      if (!currentFilteredReport || currentFilteredReport.length === 0) {
+        return showAlert("error", "Tidak ada data laporan untuk diexport sesuai filter yang dipilih.");
       }
 
       let csv = "";
@@ -592,11 +626,11 @@ function showAlert(type, msg) {
       }
     }
 
-    // ── Render Employees ──
+    // ── Master Tables ──
     function renderEmpMasterTable() {
       const tbody = document.getElementById("empMasterTbody");
       const q = (document.getElementById("filterEmp")?.value || "").toLowerCase();
-      let list = masterData.employees;
+      let list = masterData.employees || [];
       if (q) {
         list = list.filter(e => e.id.toLowerCase().includes(q) || e.name.toLowerCase().includes(q));
       }
@@ -618,10 +652,14 @@ function showAlert(type, msg) {
       `).join("");
     }
 
-    // ── Render Users ──
     function renderUserMasterTable() {
       const tbody = document.getElementById("userMasterTbody");
-      tbody.innerHTML = masterData.users.map(u => `
+      const list = masterData.users || [];
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Belum ada user terdaftar.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(u => `
         <tr class="hover:bg-slate-50 transition">
           <td class="p-3 font-semibold text-slate-900">${u.email}</td>
           <td class="p-3 font-medium text-slate-800">${u.fullName}</td>
@@ -636,10 +674,14 @@ function showAlert(type, msg) {
       `).join("");
     }
 
-    // ── Render Policies ──
     function renderPolicyMasterTable() {
       const tbody = document.getElementById("policyMasterTbody");
-      tbody.innerHTML = masterData.policies.map(p => `
+      const list = masterData.policies || [];
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400">Belum ada kebijakan cuti.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(p => `
         <tr class="hover:bg-slate-50 transition">
           <td class="p-3 font-medium text-slate-800">${p.type}</td>
           <td class="p-3 text-right font-bold text-slate-900">${p.allowedDays} Hari</td>
@@ -650,7 +692,7 @@ function showAlert(type, msg) {
       `).join("");
     }
 
-    // ── CSV Helpers: Export, Template & Parser ──
+    // ── CSV Import Engine ──
     function downloadEmployeeTemplate() {
       const csvHeader = "Employee ID,Employee Name,Rules,Phone,Leave Balance\n";
       const sampleRow = 'F999,SAMPLE EMPLOYEE,Tailor,"=""6289606318020""",12.0\n';
@@ -659,7 +701,7 @@ function showAlert(type, msg) {
 
     function exportCurrentEmployees() {
       let csv = "Employee ID,Employee Name,Rules,Phone,Leave Balance\n";
-      masterData.employees.forEach(e => {
+      (masterData.employees || []).forEach(e => {
         const cleanPhone = String(e.phone || "").replace(/[^0-9]/g, "");
         csv += `"${e.id}","${e.name}","${e.rules}","=""${cleanPhone}""",${e.leaveBalance}\n`;
       });
@@ -691,7 +733,7 @@ function showAlert(type, msg) {
 
     function parseAndPreviewCsv(text) {
       const lines = text.split(/\r\n|\n/).filter(line => line.trim().length > 0);
-      if (lines.length < 2) return alert("File CSV kosong atau tidak memiliki data.");
+      if (lines.length < 2) return showAlert("error", "File CSV kosong atau tidak memiliki data.");
 
       const rows = [];
       let hasCorruptedPhones = false;
@@ -701,7 +743,6 @@ function showAlert(type, msg) {
         if (cols[0]) {
           const rawPhone = cols[3] || "";
           const isScientific = /e\+/i.test(rawPhone);
-          
           if (isScientific) hasCorruptedPhones = true;
 
           rows.push({
@@ -724,7 +765,7 @@ function showAlert(type, msg) {
       let newCount = 0;
 
       tbody.innerHTML = rows.map(r => {
-        const existing = masterData.employees.find(e => e.id.toUpperCase() === r.id.toUpperCase());
+        const existing = (masterData.employees || []).find(e => e.id.toUpperCase() === r.id.toUpperCase());
         const isUpdate = Boolean(existing);
         if (isUpdate) updateCount++; else newCount++;
 
@@ -782,17 +823,17 @@ function showAlert(type, msg) {
           showAlert("success", res.message);
           loadMasterData();
         } else {
-          alert("Gagal: " + res.message);
+          showAlert("error", "Gagal: " + res.message);
         }
       } catch (err) {
-        alert("Koneksi gagal: " + err.message);
+        showAlert("error", "Koneksi gagal: " + err.message);
       } finally {
         btn.disabled = false;
         btn.textContent = "Konfirmasi & Simpan ke Database";
       }
     }
 
-    // ── User Management Handlers ──
+    // ── User Management ──
     function openUserModal() {
       document.getElementById("formUserActual").reset();
       document.getElementById("uEmail").readOnly = false;
@@ -801,7 +842,7 @@ function showAlert(type, msg) {
     }
 
     function editUser(email) {
-      const u = masterData.users.find(x => x.email === email);
+      const u = (masterData.users || []).find(x => x.email === email);
       if (!u) return;
       document.getElementById("uEmail").value = u.email;
       document.getElementById("uEmail").readOnly = true;
@@ -823,13 +864,17 @@ function showAlert(type, msg) {
         allowOvertime: document.getElementById("uAllowOt").checked
       };
 
-      const res = await callApi({ action: "adminSaveUser", userData: payload, email: currentUser.email, role: currentUser.role });
-      if (res.status === "success") {
-        closeModal("modalUserForm");
-        showAlert("success", res.message);
-        loadMasterData();
-      } else {
-        alert(res.message);
+      try {
+        const res = await callApi({ action: "adminSaveUser", userData: payload, email: currentUser.email, role: currentUser.role });
+        if (res.status === "success") {
+          closeModal("modalUserForm");
+          showAlert("success", res.message);
+          loadMasterData();
+        } else {
+          showAlert("error", res.message);
+        }
+      } catch (err) {
+        showAlert("error", "Gagal menyimpan user: " + err.message);
       }
     }
 
@@ -837,17 +882,22 @@ function showAlert(type, msg) {
       const days = prompt(`Masukkan jumlah kuota hari untuk '${type}':`, currentDays);
       if (days === null) return;
       const num = parseInt(days, 10);
-      if (isNaN(num) || num < 0) return alert("Angka hari tidak valid.");
+      if (isNaN(num) || num < 0) return showAlert("error", "Angka hari tidak valid.");
 
-      const res = await callApi({ action: "adminSavePolicy", policyData: { type: type, allowedDays: num }, email: currentUser.email, role: currentUser.role });
-      if (res.status === "success") {
-        showAlert("success", res.message);
-        loadMasterData();
-      } else {
-        alert(res.message);
+      try {
+        const res = await callApi({ action: "adminSavePolicy", policyData: { type: type, allowedDays: num }, email: currentUser.email, role: currentUser.role });
+        if (res.status === "success") {
+          showAlert("success", res.message);
+          loadMasterData();
+        } else {
+          showAlert("error", res.message);
+        }
+      } catch (err) {
+        showAlert("error", "Gagal memperbarui kebijakan: " + err.message);
       }
     }
 
+    // Initialize data on load
     loadMasterData();
   </script>
 </body>

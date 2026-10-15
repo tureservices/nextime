@@ -19,7 +19,7 @@
         </div>
         <div>
           <span class="font-bold text-base text-slate-900 tracking-tight">NexTime Admin Portal</span>
-          <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">Master Data</span>
+          <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">Master Data & Reporting</span>
         </div>
       </div>
       <div class="flex items-center space-x-3">
@@ -35,14 +35,17 @@
     <div id="adminAlert" class="hidden mb-4 p-3 rounded-lg text-xs font-medium transition-all"></div>
 
     <!-- Navigation Tabs -->
-    <div class="flex space-x-2 border-b border-slate-200 pb-3 mb-6">
-      <button id="btnTabEmp" onclick="switchAdminTab('emp')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition">
+    <div class="flex space-x-2 border-b border-slate-200 pb-3 mb-6 overflow-x-auto">
+      <button id="btnTabEmp" onclick="switchAdminTab('emp')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition whitespace-nowrap">
         Karyawan & Saldo Cuti
       </button>
-      <button id="btnTabUsers" onclick="switchAdminTab('users')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
+      <button id="btnTabReports" onclick="switchAdminTab('reports')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">
+        📊 Laporan Cuti & Lembur
+      </button>
+      <button id="btnTabUsers" onclick="switchAdminTab('users')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">
         Manajemen User Akun
       </button>
-      <button id="btnTabPol" onclick="switchAdminTab('pol')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
+      <button id="btnTabPol" onclick="switchAdminTab('pol')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">
         Kebijakan Cuti
       </button>
     </div>
@@ -74,27 +77,90 @@
           <span id="empCountBadge" class="text-xs text-slate-400 font-medium">0 Karyawan</span>
         </div>
 
-<!-- Table Container with Sticky Frozen Header -->
-<div class="overflow-x-auto overflow-y-auto max-h-[65vh] border border-slate-200 rounded-lg shadow-inner">
-  <table class="w-full text-left text-xs border-collapse">
-    <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-      <tr>
-        <th class="p-3 bg-slate-50">Employee ID</th>
-        <th class="p-3 bg-slate-50">Nama Karyawan</th>
-        <th class="p-3 bg-slate-50">Rules / Posisi</th>
-        <th class="p-3 bg-slate-50">WhatsApp / No HP</th>
-        <th class="p-3 bg-slate-50 text-right">Saldo Cuti Aktif</th>
-      </tr>
-    </thead>
-    <tbody id="empMasterTbody" class="divide-y divide-slate-100">
-      <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
-    </tbody>
-  </table>
-</div>
+        <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border border-slate-200 rounded-lg shadow-inner">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+              <tr>
+                <th class="p-3 bg-slate-50">Employee ID</th>
+                <th class="p-3 bg-slate-50">Nama Karyawan</th>
+                <th class="p-3 bg-slate-50">Rules / Posisi</th>
+                <th class="p-3 bg-slate-50">WhatsApp / No HP</th>
+                <th class="p-3 bg-slate-50 text-right">Saldo Cuti Aktif</th>
+              </tr>
+            </thead>
+            <tbody id="empMasterTbody" class="divide-y divide-slate-100">
+              <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <!-- TAB 2: MANAJEMEN USER -->
+    <!-- TAB 2: LAPORAN CUTI & LEMBUR -->
+    <section id="panelReports" class="hidden space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        
+        <!-- Report Type Toggle & Export -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
+          <div class="flex items-center space-x-2">
+            <button id="btnSubRepLeave" onclick="switchReportSubTab('leave')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm transition">
+              Laporan Cuti
+            </button>
+            <button id="btnSubRepOt" onclick="switchReportSubTab('overtime')" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 border border-slate-200 transition">
+              Laporan Lembur
+            </button>
+          </div>
+          <button onclick="exportCurrentReportCsv()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center gap-1.5">
+            📥 Download Rekap CSV (Sesuai Filter)
+          </button>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 mb-5 text-xs">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Dari Tanggal</label>
+            <input type="date" id="repFilterStart" onchange="renderActiveReport()" class="w-full p-2 border border-slate-300 rounded-lg bg-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Sampai Tanggal</label>
+            <input type="date" id="repFilterEnd" onchange="renderActiveReport()" class="w-full p-2 border border-slate-300 rounded-lg bg-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Status Persetujuan</label>
+            <select id="repFilterStatus" onchange="renderActiveReport()" class="w-full p-2 border border-slate-300 rounded-lg bg-white">
+              <option value="ALL">Semua Status</option>
+              <option value="Disetujui">Disetujui</option>
+              <option value="Pending">Pending</option>
+              <option value="Ditolak">Ditolak</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Pencarian Karyawan</label>
+            <input type="text" id="repFilterQuery" oninput="renderActiveReport()" placeholder="Cari ID, Nama, Alasan..." class="w-full p-2 border border-slate-300 rounded-lg bg-white">
+          </div>
+        </div>
+
+        <!-- KPI Summary Cards -->
+        <div id="reportKpiContainer" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <!-- Dynamically populated via JS -->
+        </div>
+
+        <!-- Scrollable Table with Sticky Header -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[60vh] border border-slate-200 rounded-lg shadow-inner">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead id="reportTableHead" class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+              <!-- Dynamically populated headers based on leave vs overtime -->
+            </thead>
+            <tbody id="reportTableBody" class="divide-y divide-slate-100">
+              <tr><td colspan="8" class="p-4 text-center text-slate-400">Memuat laporan...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: MANAJEMEN USER -->
     <section id="panelUsers" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
@@ -106,26 +172,26 @@
             + Tambah User
           </button>
         </div>
-<div class="overflow-x-auto overflow-y-auto max-h-[65vh] border border-slate-200 rounded-lg shadow-inner">
-  <table class="w-full text-left text-xs border-collapse">
-    <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-      <tr>
-        <th class="p-3 bg-slate-50">Email Pengguna</th>
-        <th class="p-3 bg-slate-50">Nama Lengkap</th>
-        <th class="p-3 bg-slate-50">Role</th>
-        <th class="p-3 bg-slate-50 text-center">Akses Cuti</th>
-        <th class="p-3 bg-slate-50 text-center">Akses Lembur</th>
-        <th class="p-3 bg-slate-50 text-center">Status Password</th>
-        <th class="p-3 bg-slate-50 text-right">Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="userMasterTbody" class="divide-y divide-slate-100"></tbody>
-  </table>
-</div>
+        <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border border-slate-200 rounded-lg shadow-inner">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+              <tr>
+                <th class="p-3 bg-slate-50">Email Pengguna</th>
+                <th class="p-3 bg-slate-50">Nama Lengkap</th>
+                <th class="p-3 bg-slate-50">Role</th>
+                <th class="p-3 bg-slate-50 text-center">Akses Cuti</th>
+                <th class="p-3 bg-slate-50 text-center">Akses Lembur</th>
+                <th class="p-3 bg-slate-50 text-center">Status Password</th>
+                <th class="p-3 bg-slate-50 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="userMasterTbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <!-- TAB 3: KEBIJAKAN CUTI -->
+    <!-- TAB 4: KEBIJAKAN CUTI -->
     <section id="panelPol" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
@@ -137,23 +203,23 @@
             + Tambah Kebijakan
           </button>
         </div>
-<div class="overflow-x-auto overflow-y-auto max-h-[65vh] border border-slate-200 rounded-lg shadow-inner">
-  <table class="w-full text-left text-xs border-collapse">
-    <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-      <tr>
-        <th class="p-3 bg-slate-50">Tipe Cuti</th>
-        <th class="p-3 bg-slate-50 text-right">Jatah Cuti (Allowed Days)</th>
-        <th class="p-3 bg-slate-50 text-right">Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="policyMasterTbody" class="divide-y divide-slate-100"></tbody>
-  </table>
-</div>
+        <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border border-slate-200 rounded-lg shadow-inner">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+              <tr>
+                <th class="p-3 bg-slate-50">Tipe Cuti</th>
+                <th class="p-3 bg-slate-50 text-right">Jatah Cuti (Allowed Days)</th>
+                <th class="p-3 bg-slate-50 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="policyMasterTbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- MODAL: CSV PREVIEW / DIFF BEFORE COMMIT -->
+  <!-- MODAL: CSV PREVIEW -->
   <div id="modalCsvPreview" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -165,14 +231,14 @@
       </div>
       <div class="p-6 overflow-y-auto">
         <table class="w-full text-left text-xs border border-slate-200 rounded-lg">
-          <thead class="bg-slate-100 text-slate-600 font-semibold">
+          <thead class="bg-slate-100 text-slate-600 font-semibold sticky top-0 z-10 shadow-sm">
             <tr>
-              <th class="p-2.5">Aksi</th>
-              <th class="p-2.5">Employee ID</th>
-              <th class="p-2.5">Nama Karyawan</th>
-              <th class="p-2.5">Posisi</th>
-              <th class="p-2.5">No WhatsApp</th>
-              <th class="p-2.5 text-right">Saldo Baru</th>
+              <th class="p-2.5 bg-slate-100">Aksi</th>
+              <th class="p-2.5 bg-slate-100">Employee ID</th>
+              <th class="p-2.5 bg-slate-100">Nama Karyawan</th>
+              <th class="p-2.5 bg-slate-100">Posisi</th>
+              <th class="p-2.5 bg-slate-100">No WhatsApp</th>
+              <th class="p-2.5 bg-slate-100 text-right">Saldo Baru</th>
             </tr>
           </thead>
           <tbody id="csvPreviewTbody" class="divide-y divide-slate-100"></tbody>
@@ -244,8 +310,10 @@
       window.location.href = "dashboard.html";
     }
 
-    let masterData = { employees: [], policies: [], users: [] };
+    let masterData = { employees: [], policies: [], users: [], leaveRequests: [], overtimeRecords: [] };
     let parsedCsvBuffer = [];
+    let activeReportTab = 'leave'; // 'leave' or 'overtime'
+    let currentFilteredReport = [];
 
     async function callApi(payload) {
       const res = await fetch(API_URL, {
@@ -268,15 +336,31 @@
     }
 
     function switchAdminTab(tab) {
-      ["emp", "users", "pol"].forEach(t => {
+      ["emp", "reports", "users", "pol"].forEach(t => {
         document.getElementById(`panel${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.toggle("hidden", t !== tab);
         const btn = document.getElementById(`btnTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
         if (t === tab) {
-          btn.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition";
+          btn.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition whitespace-nowrap";
         } else {
-          btn.className = "px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition";
+          btn.className = "px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap";
         }
       });
+      if (tab === "reports") renderActiveReport();
+    }
+
+    function switchReportSubTab(type) {
+      activeReportTab = type;
+      const btnLeave = document.getElementById("btnSubRepLeave");
+      const btnOt = document.getElementById("btnSubRepOt");
+
+      if (type === 'leave') {
+        btnLeave.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm transition";
+        btnOt.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 border border-slate-200 transition";
+      } else {
+        btnOt.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-sm transition";
+        btnLeave.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 border border-slate-200 transition";
+      }
+      renderActiveReport();
     }
 
     function openModal(id) {
@@ -288,7 +372,7 @@
       document.getElementById(id).classList.remove("flex");
     }
 
-    // ── Load All Master Data ──
+    // ── Load All Master & Report Data ──
     async function loadMasterData() {
       try {
         const res = await callApi({ action: "adminGetMasterData", email: currentUser.email, role: currentUser.role });
@@ -297,11 +381,219 @@
           renderEmpMasterTable();
           renderUserMasterTable();
           renderPolicyMasterTable();
+          renderActiveReport();
         } else {
           showAlert("error", res.message);
         }
       } catch (err) {
         showAlert("error", "Koneksi gagal: " + err.message);
+      }
+    }
+
+    // ── REPORT ENGINE: FILTERING, KPIS & RENDERING ──
+    function calculateOtHours(startStr, endStr) {
+      if (!startStr || !endStr || !startStr.includes(":") || !endStr.includes(":")) return 0;
+      const [h1, m1] = startStr.split(":").map(Number);
+      const [h2, m2] = endStr.split(":").map(Number);
+      let diffMin = (h2 * 60 + m2) - (h1 * 60 + m1);
+      if (diffMin < 0) diffMin += 24 * 60; // Crosses midnight
+      return diffMin / 60;
+    }
+
+    function renderActiveReport() {
+      const startFilter = document.getElementById("repFilterStart")?.value || "";
+      const endFilter = document.getElementById("repFilterEnd")?.value || "";
+      const statusFilter = document.getElementById("repFilterStatus")?.value || "ALL";
+      const q = (document.getElementById("repFilterQuery")?.value || "").toLowerCase();
+
+      const kpiBox = document.getElementById("reportKpiContainer");
+      const thead = document.getElementById("reportTableHead");
+      const tbody = document.getElementById("reportTableBody");
+
+      if (activeReportTab === 'leave') {
+        let records = masterData.leaveRequests || [];
+
+        // Apply Filters
+        if (startFilter) records = records.filter(r => r.startDate >= startFilter);
+        if (endFilter) records = records.filter(r => r.endDate <= endFilter);
+        if (statusFilter !== "ALL") records = records.filter(r => r.status.toLowerCase() === statusFilter.toLowerCase());
+        if (q) {
+          records = records.filter(r =>
+            r.employeeId.toLowerCase().includes(q) ||
+            r.employeeName.toLowerCase().includes(q) ||
+            r.leaveType.toLowerCase().includes(q) ||
+            r.reason.toLowerCase().includes(q)
+          );
+        }
+
+        currentFilteredReport = records;
+
+        // Calculate KPIs
+        const totalReq = records.length;
+        const approvedReq = records.filter(r => r.status === "Disetujui");
+        const totalApprovedDays = approvedReq.reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
+        const pendingCount = records.filter(r => r.status === "Pending").length;
+        const unpaidCount = records.filter(r => r.note && r.note.toLowerCase().includes("unpaid")).length;
+
+        kpiBox.innerHTML = `
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-slate-400 text-[10px] font-semibold uppercase">Total Pengajuan</span>
+            <div class="text-lg font-bold text-slate-900 mt-1">${totalReq}</div>
+          </div>
+          <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 shadow-sm">
+            <span class="text-blue-600 text-[10px] font-semibold uppercase">Hari Cuti Disetujui</span>
+            <div class="text-lg font-bold text-blue-900 mt-1">${totalApprovedDays.toFixed(1)} <span class="text-xs font-normal">Hari</span></div>
+          </div>
+          <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100 shadow-sm">
+            <span class="text-amber-600 text-[10px] font-semibold uppercase">Menunggu Review</span>
+            <div class="text-lg font-bold text-amber-900 mt-1">${pendingCount}</div>
+          </div>
+          <div class="bg-rose-50/60 p-3.5 rounded-xl border border-rose-100 shadow-sm">
+            <span class="text-rose-600 text-[10px] font-semibold uppercase">Kasus Unpaid Leave</span>
+            <div class="text-lg font-bold text-rose-900 mt-1">${unpaidCount}</div>
+          </div>
+        `;
+
+        thead.innerHTML = `
+          <tr>
+            <th class="p-3 bg-slate-50">ID Pengajuan</th>
+            <th class="p-3 bg-slate-50">Karyawan</th>
+            <th class="p-3 bg-slate-50">Tipe Cuti</th>
+            <th class="p-3 bg-slate-50">Periode Cuti</th>
+            <th class="p-3 bg-slate-50 text-right">Total Hari</th>
+            <th class="p-3 bg-slate-50">Alasan</th>
+            <th class="p-3 bg-slate-50">Catatan / Payroll</th>
+            <th class="p-3 bg-slate-50 text-center">Status</th>
+          </tr>
+        `;
+
+        if (records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada catatan cuti yang cocok dengan filter.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = records.map(r => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-semibold text-slate-900">${r.leaveId}</td>
+            <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400 font-mono text-[11px]">${r.employeeId} • ${r.rules}</span></td>
+            <td class="p-3">${r.leaveType}<br><span class="text-slate-400 text-[11px]">${r.requestType}</span></td>
+            <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
+            <td class="p-3 text-right font-bold text-slate-800">${Number(r.totalDays).toFixed(1)}</td>
+            <td class="p-3 text-slate-600">${r.reason}</td>
+            <td class="p-3">${r.note ? `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">${r.note}</span>` : '-'}</td>
+            <td class="p-3 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
+              }">${r.status}</span>
+            </td>
+          </tr>
+        `).join("");
+
+      } else {
+        // OVERTIME REPORT
+        let records = masterData.overtimeRecords || [];
+
+        if (startFilter) records = records.filter(r => r.date >= startFilter);
+        if (endFilter) records = records.filter(r => r.date <= endFilter);
+        if (statusFilter !== "ALL") records = records.filter(r => r.status.toLowerCase() === statusFilter.toLowerCase());
+        if (q) {
+          records = records.filter(r =>
+            r.employeeId.toLowerCase().includes(q) ||
+            r.employeeName.toLowerCase().includes(q) ||
+            r.dayType.toLowerCase().includes(q) ||
+            r.reason.toLowerCase().includes(q)
+          );
+        }
+
+        currentFilteredReport = records;
+
+        const totalReq = records.length;
+        const approvedReq = records.filter(r => r.status === "Disetujui");
+        const totalHours = approvedReq.reduce((sum, r) => sum + calculateOtHours(r.startTime, r.endTime), 0);
+        const holidayCount = approvedReq.filter(r => r.dayType && r.dayType.toLowerCase().includes("libur")).length;
+        const pendingCount = records.filter(r => r.status === "Pending").length;
+
+        kpiBox.innerHTML = `
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-slate-400 text-[10px] font-semibold uppercase">Total Pengajuan</span>
+            <div class="text-lg font-bold text-slate-900 mt-1">${totalReq}</div>
+          </div>
+          <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 shadow-sm">
+            <span class="text-indigo-600 text-[10px] font-semibold uppercase">Total Jam Disetujui</span>
+            <div class="text-lg font-bold text-indigo-900 mt-1">${totalHours.toFixed(1)} <span class="text-xs font-normal">Jam</span></div>
+          </div>
+          <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100 shadow-sm">
+            <span class="text-emerald-600 text-[10px] font-semibold uppercase">Lembur Hari Libur</span>
+            <div class="text-lg font-bold text-emerald-900 mt-1">${holidayCount} <span class="text-xs font-normal">Kasus</span></div>
+          </div>
+          <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100 shadow-sm">
+            <span class="text-amber-600 text-[10px] font-semibold uppercase">Menunggu Review</span>
+            <div class="text-lg font-bold text-amber-900 mt-1">${pendingCount}</div>
+          </div>
+        `;
+
+        thead.innerHTML = `
+          <tr>
+            <th class="p-3 bg-slate-50">ID Lembur</th>
+            <th class="p-3 bg-slate-50">Karyawan</th>
+            <th class="p-3 bg-slate-50">Tanggal</th>
+            <th class="p-3 bg-slate-50">Jam Kerja</th>
+            <th class="p-3 bg-slate-50 text-right">Durasi</th>
+            <th class="p-3 bg-slate-50">Tipe Hari</th>
+            <th class="p-3 bg-slate-50">Alasan</th>
+            <th class="p-3 bg-slate-50 text-center">Status</th>
+          </tr>
+        `;
+
+        if (records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada catatan lembur yang cocok dengan filter.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = records.map(r => {
+          const duration = calculateOtHours(r.startTime, r.endTime);
+          return `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="p-3 font-semibold text-slate-900">${r.overtimeId}</td>
+              <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400 font-mono text-[11px]">${r.employeeId} • ${r.rules}</span></td>
+              <td class="p-3 font-medium">${r.date}</td>
+              <td class="p-3">${r.startTime} - ${r.endTime}</td>
+              <td class="p-3 text-right font-bold text-slate-800">${duration.toFixed(1)} Jam</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-medium ${r.dayType && r.dayType.includes('Libur') ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'}">${r.dayType}</span></td>
+              <td class="p-3 text-slate-600">${r.reason}</td>
+              <td class="p-3 text-center">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                  r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
+                }">${r.status}</span>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+
+    // ── EXPORT FILTERED REPORT TO CSV ──
+    function exportCurrentReportCsv() {
+      if (currentFilteredReport.length === 0) {
+        return alert("Tidak ada data laporan untuk diexport sesuai filter yang dipilih.");
+      }
+
+      let csv = "";
+      const nowStr = new Date().toISOString().slice(0, 10);
+
+      if (activeReportTab === 'leave') {
+        csv = "Leave ID,Employee ID,Employee Name,Rules,Leave Type,Request Type,Start Date,End Date,Total Days,Reason,Note,Status,Submitted At\n";
+        currentFilteredReport.forEach(r => {
+          csv += `"${r.leaveId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.leaveType}","${r.requestType}","${r.startDate}","${r.endDate}",${r.totalDays},"${(r.reason || '').replace(/"/g, '""')}","${(r.note || '').replace(/"/g, '""')}","${r.status}","${r.submittedAt}"\n`;
+        });
+        triggerDownload(`Rekap_Cuti_${nowStr}.csv`, csv);
+      } else {
+        csv = "Overtime ID,Employee ID,Employee Name,Rules,Date,Start Time,End Time,Duration Hours,Day Type,Reason,Status,Submitted At\n";
+        currentFilteredReport.forEach(r => {
+          const duration = calculateOtHours(r.startTime, r.endTime);
+          csv += `"${r.overtimeId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.date}","${r.startTime}","${r.endTime}",${duration.toFixed(2)},"${r.dayType}","${(r.reason || '').replace(/"/g, '""')}","${r.status}","${r.submittedAt}"\n`;
+        });
+        triggerDownload(`Rekap_Lembur_${nowStr}.csv`, csv);
       }
     }
 
@@ -366,14 +658,15 @@
     // ── CSV Helpers: Export, Template & Parser ──
     function downloadEmployeeTemplate() {
       const csvHeader = "Employee ID,Employee Name,Rules,Phone,Leave Balance\n";
-      const sampleRow = "F999,SAMPLE EMPLOYEE,Tailor,6289606318020,12.0\n";
+      const sampleRow = 'F999,SAMPLE EMPLOYEE,Tailor,"=""6289606318020""",12.0\n';
       triggerDownload("Template_Karyawan_NexTime.csv", csvHeader + sampleRow);
     }
 
     function exportCurrentEmployees() {
       let csv = "Employee ID,Employee Name,Rules,Phone,Leave Balance\n";
       masterData.employees.forEach(e => {
-        csv += `"${e.id}","${e.name}","${e.rules}","${e.phone}",${e.leaveBalance}\n`;
+        const cleanPhone = String(e.phone || "").replace(/[^0-9]/g, "");
+        csv += `"${e.id}","${e.name}","${e.rules}","=""${cleanPhone}""",${e.leaveBalance}\n`;
       });
       triggerDownload(`Export_Karyawan_${new Date().toISOString().slice(0, 10)}.csv`, csv);
     }
@@ -398,7 +691,7 @@
         parseAndPreviewCsv(evt.target.result);
       };
       reader.readAsText(file);
-      e.target.value = ""; // Reset
+      e.target.value = "";
     }
 
     function parseAndPreviewCsv(text) {
@@ -406,15 +699,23 @@
       if (lines.length < 2) return alert("File CSV kosong atau tidak memiliki data.");
 
       const rows = [];
-      // Clean split handling quotes
+      let hasCorruptedPhones = false;
+
       for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(",").map(c => c.replace(/^["']|["']$/g, '').trim());
+        const cols = lines[i].split(",").map(c => c.replace(/^["'=]+|["']+$/g, '').trim());
         if (cols[0]) {
+          const rawPhone = cols[3] || "";
+          const isScientific = /e\+/i.test(rawPhone);
+          
+          if (isScientific) hasCorruptedPhones = true;
+
           rows.push({
             id: cols[0],
             name: cols[1] || "",
             rules: cols[2] || "",
-            phone: cols[3] || "",
+            phone: rawPhone.replace(/[^0-9]/g, ""),
+            rawPhone: rawPhone,
+            isCorrupted: isScientific,
             leaveBalance: cols[4] || "0"
           });
         }
@@ -422,8 +723,8 @@
 
       parsedCsvBuffer = rows;
 
-      // Render Diff Preview
       const tbody = document.getElementById("csvPreviewTbody");
+      const btnCommit = document.getElementById("btnCommitCsv");
       let updateCount = 0;
       let newCount = 0;
 
@@ -433,16 +734,20 @@
         if (isUpdate) updateCount++; else newCount++;
 
         return `
-          <tr class="border-b border-slate-100 ${isUpdate ? 'bg-amber-50/40' : 'bg-emerald-50/40'}">
+          <tr class="border-b border-slate-100 ${r.isCorrupted ? 'bg-rose-50' : (isUpdate ? 'bg-amber-50/40' : 'bg-emerald-50/40')}">
             <td class="p-2.5">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isUpdate ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
-                ${isUpdate ? 'UPDATE / TOP-UP' : 'KARYAWAN BARU'}
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                r.isCorrupted ? 'bg-rose-600 text-white' : (isUpdate ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')
+              }">
+                ${r.isCorrupted ? 'ERROR EXCEL' : (isUpdate ? 'UPDATE / TOP-UP' : 'KARYAWAN BARU')}
               </span>
             </td>
             <td class="p-2.5 font-semibold text-slate-900">${r.id}</td>
             <td class="p-2.5">${r.name || (existing ? existing.name : '-')}</td>
             <td class="p-2.5">${r.rules || (existing ? existing.rules : '-')}</td>
-            <td class="p-2.5 font-mono">${r.phone || (existing ? existing.phone + ' (tetap)' : '-')}</td>
+            <td class="p-2.5 font-mono">
+              ${r.isCorrupted ? `<span class="text-rose-600 font-bold">${r.rawPhone} (Rusak oleh Excel)</span>` : (r.phone || (existing ? existing.phone + ' (tetap)' : '-'))}
+            </td>
             <td class="p-2.5 text-right font-bold text-slate-900">
               ${isUpdate ? `<span class="text-slate-400 line-through mr-1">${existing.leaveBalance}</span>` : ''}
               ${Number(r.leaveBalance).toFixed(2)} Hari
@@ -451,7 +756,16 @@
         `;
       }).join("");
 
-      document.getElementById("csvSummaryText").textContent = `Terdeteksi: ${updateCount} diperbarui / top up saldo, ${newCount} karyawan baru.`;
+      if (hasCorruptedPhones) {
+        document.getElementById("csvSummaryText").innerHTML = `<span class="text-rose-600 font-bold">Terdeteksi format nomor HP rusak (Scientific E+). Harap format kolom Phone sebagai Text di Excel.</span>`;
+        btnCommit.disabled = true;
+        btnCommit.classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        document.getElementById("csvSummaryText").textContent = `Terdeteksi: ${updateCount} diperbarui / top up saldo, ${newCount} karyawan baru.`;
+        btnCommit.disabled = false;
+        btnCommit.classList.remove("opacity-50", "cursor-not-allowed");
+      }
+
       openModal("modalCsvPreview");
     }
 

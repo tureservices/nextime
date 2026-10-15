@@ -99,7 +99,6 @@
     <!-- TAB 2: LAPORAN CUTI & LEMBUR -->
     <section id="panelReports" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-        
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
           <div class="flex items-center space-x-2">
             <button id="btnSubRepLeave" onclick="switchReportSubTab('leave')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm transition">
@@ -275,44 +274,63 @@
     </div>
   </div>
 
-  <!-- MODAL: USER FORM (CREATE & EDIT) -->
+  <!-- MODAL: USER FORM (TWO-STEP PROGRESSIVE DISCLOSURE) -->
   <div id="modalUserForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-      <h3 class="font-bold text-sm text-slate-900 mb-4" id="userFormTitle">Kelola User</h3>
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-sm text-slate-900" id="userFormTitle">Tambah Akun User Baru</h3>
+        <button type="button" onclick="closeModal('modalUserForm')" class="text-slate-400 hover:text-slate-600 text-lg font-bold leading-none">&times;</button>
+      </div>
+
       <form id="formUserActual" onsubmit="submitUserForm(event)" class="space-y-3 text-xs">
+        
+        <!-- STEP 1: EMAIL INPUT & LIVE VALIDATION -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Email Karyawan</label>
-          <input type="email" id="uEmail" required placeholder="user@domain.com" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-          <p id="uEmailHint" class="text-[10px] text-slate-400 mt-1 hidden">Email adalah ID unik login dan tidak dapat diubah setelah dibuat.</p>
+          <input type="email" id="uEmail" required placeholder="user@company.com" oninput="handleEmailInputCheck()" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
+          
+          <!-- Instant Inline Database Feedback -->
+          <div id="emailFeedbackBox" class="mt-1.5 hidden text-[11px] font-medium leading-relaxed"></div>
+          <p id="uEmailHint" class="text-[10px] text-slate-400 mt-1 hidden">Email adalah identitas login unik dan tidak dapat diubah setelah dibuat.</p>
         </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-          <input type="text" id="uName" required placeholder="Nama Lengkap" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+
+        <!-- STEP 2: REST OF FORM (LOCKED/HIDDEN UNTIL EMAIL IS CONFIRMED AVAILABLE) -->
+        <div id="userRestOfForm" class="hidden space-y-3 pt-3 border-t border-slate-100 transition-all">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+            <input type="text" id="uName" required placeholder="Masukkan Nama Lengkap" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Role Persetujuan</label>
+            <select id="uRole" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white">
+              <option value="Basic">Basic (Staff Standard)</option>
+              <option value="HR">HR</option>
+              <option value="Factory Manager">Factory Manager</option>
+              <option value="Sample Manager">Sample Manager</option>
+              <option value="Admin">Admin / Administrator</option>
+            </select>
+          </div>
+          <div class="space-y-2 pt-1">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="uAllowLeave" class="w-4 h-4 text-blue-600 rounded">
+              <span class="text-slate-700 font-medium">Boleh Mengajukan Cuti (Allow Leave)</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="uAllowOt" class="w-4 h-4 text-blue-600 rounded">
+              <span class="text-slate-700 font-medium">Boleh Mengajukan Lembur (Allow Overtime)</span>
+            </label>
+          </div>
+          <div class="flex justify-end space-x-2 pt-3">
+            <button type="button" onclick="closeModal('modalUserForm')" class="px-3.5 py-2 border border-slate-200 text-slate-600 rounded-lg font-semibold hover:bg-slate-50">Batal</button>
+            <button type="submit" id="btnSubmitUser" class="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-lg font-semibold shadow">Simpan User</button>
+          </div>
         </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Role Persetujuan</label>
-          <select id="uRole" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white">
-            <option value="Basic">Basic (Staff Standard)</option>
-            <option value="HR">HR</option>
-            <option value="Factory Manager">Factory Manager</option>
-            <option value="Sample Manager">Sample Manager</option>
-            <option value="Admin">Admin / Administrator</option>
-          </select>
+
+        <!-- Default Cancel button when Step 2 is still hidden -->
+        <div id="step1Actions" class="flex justify-end pt-2">
+          <button type="button" onclick="closeModal('modalUserForm')" class="px-3.5 py-2 border border-slate-200 text-slate-600 rounded-lg font-semibold hover:bg-slate-50">Batal</button>
         </div>
-        <div class="space-y-2 pt-2">
-          <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" id="uAllowLeave" class="w-4 h-4 text-blue-600 rounded">
-            <span class="text-slate-700 font-medium">Boleh Mengajukan Cuti (Allow Leave)</span>
-          </label>
-          <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" id="uAllowOt" class="w-4 h-4 text-blue-600 rounded">
-            <span class="text-slate-700 font-medium">Boleh Mengajukan Lembur (Allow Overtime)</span>
-          </label>
-        </div>
-        <div class="flex justify-end space-x-2 pt-4">
-          <button type="button" onclick="closeModal('modalUserForm')" class="px-3.5 py-2 border border-slate-200 text-slate-600 rounded-lg font-semibold">Batal</button>
-          <button type="submit" id="btnSubmitUser" class="px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold shadow">Simpan User</button>
-        </div>
+
       </form>
     </div>
   </div>
@@ -347,6 +365,7 @@
     let alertTimer = null;
     let isUserEditMode = false;
     let pendingDeleteEmail = null;
+    let emailDebounceTimer = null;
 
     // ── RBAC Guard ──
     const userStr = localStorage.getItem("nextime_user");
@@ -732,16 +751,89 @@
       `).join("");
     }
 
-    // ── User Management Handlers ──
+    // ── Progressive Email Check & Form Gatekeeper ──
+    function handleEmailInputCheck() {
+      if (isUserEditMode) return;
+
+      const emailInput = document.getElementById("uEmail");
+      const feedback = document.getElementById("emailFeedbackBox");
+      const restOfForm = document.getElementById("userRestOfForm");
+      const step1Actions = document.getElementById("step1Actions");
+      const rawEmail = (emailInput.value || "").trim().toLowerCase();
+
+      clearTimeout(emailDebounceTimer);
+
+      if (!rawEmail) {
+        feedback.className = "hidden";
+        emailInput.className = "w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition";
+        restOfForm.classList.add("hidden");
+        step1Actions.classList.remove("hidden");
+        return;
+      }
+
+      // Check Email Format first
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(rawEmail)) {
+        feedback.className = "mt-1.5 text-[11px] font-medium text-slate-400 block";
+        feedback.textContent = "Ketik format email lengkap (contoh: user@company.com)...";
+        emailInput.className = "w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition";
+        restOfForm.classList.add("hidden");
+        step1Actions.classList.remove("hidden");
+        return;
+      }
+
+      feedback.className = "mt-1.5 text-[11px] font-medium text-blue-600 block";
+      feedback.textContent = "Memeriksa database user...";
+
+      // 300ms Debounce Check
+      emailDebounceTimer = setTimeout(() => {
+        const existing = (masterData.users || []).find(u => String(u.email || "").trim().toLowerCase() === rawEmail);
+
+        if (existing) {
+          // EMAIL EXISTS IN DB: BLOCK PROGRESSION
+          emailInput.className = "w-full p-2.5 border border-rose-500 bg-rose-50/40 rounded-lg focus:ring-2 focus:ring-rose-500 transition";
+          feedback.className = "mt-1.5 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] block";
+          feedback.innerHTML = `<strong>Email '${rawEmail}' sudah terdaftar</strong> atas nama <strong>${existing.fullName}</strong>. Tidak bisa membuat user ganda.`;
+          
+          // Keep Nama Lengkap & rest of form HIDDEN
+          restOfForm.classList.add("hidden");
+          step1Actions.classList.remove("hidden");
+        } else {
+          // EMAIL IS FREE: UNLOCK NAMA LENGKAP & REST OF FORM
+          emailInput.className = "w-full p-2.5 border border-emerald-500 bg-emerald-50/20 rounded-lg focus:ring-2 focus:ring-emerald-500 transition";
+          feedback.className = "mt-1.5 text-[11px] font-semibold text-emerald-600 block";
+          feedback.innerHTML = `Email tersedia. Silakan lengkapi nama dan hak akses di bawah:`;
+          
+          // REVEAL NAMA LENGKAP & REST OF FORM
+          restOfForm.classList.remove("hidden");
+          step1Actions.classList.add("hidden");
+          
+          // Auto-focus directly into Nama Lengkap
+          document.getElementById("uName").focus();
+        }
+      }, 300);
+    }
+
+    // ── User Management Modal Handlers ──
     function openUserModal() {
       isUserEditMode = false;
       document.getElementById("formUserActual").reset();
-      document.getElementById("uEmail").readOnly = false;
-      document.getElementById("uEmail").classList.remove("bg-slate-100", "cursor-not-allowed");
+
+      const emailInput = document.getElementById("uEmail");
+      emailInput.readOnly = false;
+      emailInput.className = "w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition";
+
+      document.getElementById("emailFeedbackBox").className = "hidden";
       document.getElementById("uEmailHint").classList.add("hidden");
+      
+      // Lock and hide Step 2
+      document.getElementById("userRestOfForm").classList.add("hidden");
+      document.getElementById("step1Actions").classList.remove("hidden");
+
       document.getElementById("userFormTitle").textContent = "Tambah Akun User Baru";
       document.getElementById("btnSubmitUser").textContent = "Simpan User";
       openModal("modalUserForm");
+      emailInput.focus();
     }
 
     function editUser(email) {
@@ -749,10 +841,19 @@
       if (!u) return;
 
       isUserEditMode = true;
-      document.getElementById("uEmail").value = u.email;
-      document.getElementById("uEmail").readOnly = true;
-      document.getElementById("uEmail").classList.add("bg-slate-100", "cursor-not-allowed");
+
+      const emailInput = document.getElementById("uEmail");
+      emailInput.value = u.email;
+      emailInput.readOnly = true;
+      emailInput.className = "w-full p-2.5 border border-slate-200 bg-slate-100 rounded-lg text-slate-500 cursor-not-allowed";
+
+      document.getElementById("emailFeedbackBox").className = "hidden";
       document.getElementById("uEmailHint").classList.remove("hidden");
+
+      // In edit mode, show all fields immediately
+      document.getElementById("userRestOfForm").classList.remove("hidden");
+      document.getElementById("step1Actions").classList.add("hidden");
+
       document.getElementById("uName").value = u.fullName;
       document.getElementById("uRole").value = u.role;
       document.getElementById("uAllowLeave").checked = u.allowLeave;
@@ -766,11 +867,11 @@
       e.preventDefault();
       const enteredEmail = document.getElementById("uEmail").value.trim().toLowerCase();
 
-      // Client-side guard for duplicate email on Create Mode
+      // Final client check
       if (!isUserEditMode) {
         const exists = (masterData.users || []).some(u => u.email.toLowerCase() === enteredEmail);
         if (exists) {
-          return showAlert("error", `Email '${enteredEmail}' sudah terdaftar. Gunakan email lain atau gunakan tombol Edit.`);
+          return showAlert("error", `Email '${enteredEmail}' sudah terdaftar di sistem.`);
         }
       }
 

@@ -517,7 +517,13 @@
         const approvedReq = records.filter(r => r.status === "Disetujui");
         const totalApprovedDays = approvedReq.reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
         const pendingCount = records.filter(r => r.status === "Pending").length;
-        const unpaidCount = records.filter(r => r.note && r.note.toLowerCase().includes("unpaid")).length;
+
+        // Poin 1: Menghitung jumlah hari Sakit / MCU dengan Surat Dokter (DC)
+        const sickMcuDcDays = approvedReq.filter(r => {
+          const lower = (r.leaveType || "").toLowerCase();
+          return (lower.includes("sakit") || lower.includes("mcu") || lower.includes("medical checkup")) &&
+                 (lower.includes("surat") || lower.includes("dc") || lower.includes("dokter"));
+        }).reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
 
         kpiBox.innerHTML = `
           <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
@@ -528,13 +534,13 @@
             <span class="text-blue-600 text-[10px] font-semibold uppercase">Hari Disetujui</span>
             <div class="text-lg font-bold text-blue-900 mt-1">${totalApprovedDays.toFixed(1)} <span class="text-xs font-normal">Hari</span></div>
           </div>
+          <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 shadow-sm">
+            <span class="text-indigo-600 text-[10px] font-semibold uppercase">Sakit / MCU (Surat DC)</span>
+            <div class="text-lg font-bold text-indigo-900 mt-1">${sickMcuDcDays.toFixed(1)} <span class="text-xs font-normal">Hari</span></div>
+          </div>
           <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100 shadow-sm">
             <span class="text-amber-600 text-[10px] font-semibold uppercase">Menunggu Review</span>
             <div class="text-lg font-bold text-amber-900 mt-1">${pendingCount}</div>
-          </div>
-          <div class="bg-rose-50/60 p-3.5 rounded-xl border border-rose-100 shadow-sm">
-            <span class="text-rose-600 text-[10px] font-semibold uppercase">Unpaid Leave</span>
-            <div class="text-lg font-bold text-rose-900 mt-1">${unpaidCount}</div>
           </div>
         `;
 
@@ -581,6 +587,7 @@
           records = records.filter(r =>
             (r.employeeId || "").toLowerCase().includes(q) ||
             (r.employeeName || "").toLowerCase().includes(q) ||
+            (r.payrollPeriod || "").toLowerCase().includes(q) ||
             (r.submittedBy || "").toLowerCase().includes(q) ||
             (r.approvedBy || "").toLowerCase().includes(q)
           );
@@ -617,7 +624,7 @@
           <tr>
             <th class="p-3 bg-slate-50">ID Lembur</th>
             <th class="p-3 bg-slate-50">Karyawan</th>
-            <th class="p-3 bg-slate-50">Tanggal & Jam</th>
+            <th class="p-3 bg-slate-50">Periode & Tanggal</th>
             <th class="p-3 bg-slate-50 text-right">Durasi</th>
             <th class="p-3 bg-slate-50">Diajukan Oleh</th>
             <th class="p-3 bg-slate-50">Disetujui Oleh</th>
@@ -636,7 +643,7 @@
             <tr class="hover:bg-slate-50 transition text-xs">
               <td class="p-3 font-semibold text-slate-900">${r.overtimeId}</td>
               <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400 font-mono text-[11px]">${r.employeeId}</span></td>
-              <td class="p-3">${r.date}<br><span class="text-slate-400 text-[11px]">${r.startTime} - ${r.endTime} (${r.dayType})</span></td>
+              <td class="p-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">${r.payrollPeriod || '-'}</span> ${r.date}<br><span class="text-slate-400 text-[11px]">${r.startTime} - ${r.endTime} (${r.dayType})</span></td>
               <td class="p-3 text-right font-bold text-slate-800">${duration.toFixed(1)} Jam</td>
               <td class="p-3 text-slate-600">${r.submittedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.submittedAt || ''}</span></td>
               <td class="p-3 text-slate-600">${r.approvedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.approvedAt || ''}</span></td>
@@ -651,7 +658,7 @@
       }
     }
 
-    // ── CSV Export ──
+    // ── CSV Export (Audit Trail Included) ──
     function exportCurrentReportCsv() {
       if (!currentFilteredReport || currentFilteredReport.length === 0) {
         return showAlert("error", "Tidak ada data laporan untuk diexport sesuai filter yang dipilih.");
@@ -667,16 +674,16 @@
         });
         triggerDownload(`Rekap_Cuti_${nowStr}.csv`, csv);
       } else {
-        csv = "Overtime ID,Employee ID,Employee Name,Rules,Date,Start Time,End Time,Duration Hours,Day Type,Reason,Status,Submitted By,Submitted At,Approved By,Approved At\n";
+        csv = "Overtime ID,Employee ID,Employee Name,Rules,Payroll Period,Date,Start Time,End Time,Duration Hours,Day Type,Reason,Status,Submitted By,Submitted At,Approved By,Approved At\n";
         currentFilteredReport.forEach(r => {
           const duration = calculateOtHours(r.startTime, r.endTime);
-          csv += `"${r.overtimeId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.date}","${r.startTime}","${r.endTime}",${duration.toFixed(2)},"${r.dayType}","${(r.reason || '').replace(/"/g, '""')}","${r.status}","${r.submittedBy || ''}","${r.submittedAt || ''}","${r.approvedBy || ''}","${r.approvedAt || ''}"\n`;
+          csv += `"${r.overtimeId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.payrollPeriod || ''}","${r.date}","${r.startTime}","${r.endTime}",${duration.toFixed(2)},"${r.dayType}","${(r.reason || '').replace(/"/g, '""')}","${r.status}","${r.submittedBy || ''}","${r.submittedAt || ''}","${r.approvedBy || ''}","${r.approvedAt || ''}"\n`;
         });
         triggerDownload(`Rekap_Lembur_${nowStr}.csv`, csv);
       }
     }
 
-    // ── Master Tables ──
+    // ── Master Tables (Dukungan Saldo Minus) ──
     function renderEmpMasterTable() {
       const tbody = document.getElementById("empMasterTbody");
       const q = (document.getElementById("filterEmp")?.value || "").toLowerCase();
@@ -691,15 +698,22 @@
         return;
       }
 
-      tbody.innerHTML = list.map(e => `
-        <tr class="hover:bg-slate-50 transition">
-          <td class="p-3 font-semibold text-slate-900">${e.id}</td>
-          <td class="p-3 font-medium text-slate-800">${e.name}</td>
-          <td class="p-3 text-slate-500">${e.rules}</td>
-          <td class="p-3 text-slate-600 font-mono">${e.phone || '-'}</td>
-          <td class="p-3 text-right font-bold text-slate-900">${Number(e.leaveBalance).toFixed(2)} Hari</td>
-        </tr>
-      `).join("");
+      tbody.innerHTML = list.map(e => {
+        const bal = Number(e.leaveBalance) || 0;
+        const balDisplay = bal < 0 
+          ? `<span class="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">${bal.toFixed(2)} Hari (Minus)</span>`
+          : `<span class="font-bold text-slate-900">${bal.toFixed(2)} Hari</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-semibold text-slate-900">${e.id}</td>
+            <td class="p-3 font-medium text-slate-800">${e.name}</td>
+            <td class="p-3 text-slate-500">${e.rules}</td>
+            <td class="p-3 text-slate-600 font-mono">${e.phone || '-'}</td>
+            <td class="p-3 text-right">${balDisplay}</td>
+          </tr>
+        `;
+      }).join("");
     }
 
     function renderUserMasterTable() {

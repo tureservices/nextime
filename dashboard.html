@@ -48,6 +48,9 @@
         <button id="tabOvertime" onclick="switchMainTab('overtime')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
           Riwayat Lembur
         </button>
+        <button id="tabBalance" onclick="switchMainTab('balance')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">
+          Saldo Cuti Karyawan
+        </button>
       </div>
       <div class="flex space-x-2 w-full sm:w-auto">
         <button onclick="openModal('modalLeave')" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow transition flex items-center justify-center gap-1.5">
@@ -149,6 +152,36 @@
         </div>
       </div>
     </div>
+    <!-- Tab 4: Saldo Cuti Karyawan (Read-Only) -->
+<div id="viewBalance" class="hidden space-y-4">
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h2 class="font-bold text-sm text-slate-800">Daftar Saldo Cuti Karyawan</h2>
+        <p class="text-[11px] text-slate-400 mt-0.5">Informasi kuota cuti tahunan aktif per karyawan</p>
+      </div>
+      <div class="w-full sm:w-72">
+        <input type="text" id="searchBalance" oninput="renderBalanceTable()" placeholder="Cari Employee ID, Nama, Posisi..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+          <tr>
+            <th class="p-3">Employee ID</th>
+            <th class="p-3">Nama Karyawan</th>
+            <th class="p-3">Rules / Posisi</th>
+            <th class="p-3 text-right">Sisa Saldo Cuti</th>
+            <th class="p-3 text-center">Status Kuota</th>
+          </tr>
+        </thead>
+        <tbody id="balanceTableBody" class="divide-y divide-slate-100">
+          <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
   </main>
 
   <!-- MODAL: DESKTOP-STYLE CONFIRMATION DIALOG -->
@@ -408,24 +441,68 @@
       }, 2000);
     }
 
+// ── Render Tab 4: Saldo Cuti Karyawan (Read-Only) ──
+function renderBalanceTable() {
+  const tbody = document.getElementById("balanceTableBody");
+  const query = (document.getElementById("searchBalance")?.value || "").toLowerCase();
+
+  let list = appData.employees || [];
+  if (query) {
+    list = list.filter(e =>
+      e.id.toLowerCase().includes(query) ||
+      e.name.toLowerCase().includes(query) ||
+      e.rules.toLowerCase().includes(query)
+    );
+  }
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Tidak ada data karyawan yang cocok.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(e => {
+    const balance = Number(e.leaveBalance) || 0;
+    
+    // SaaS visual indicator: low balance vs available balance
+    let statusBadge = "";
+    if (balance <= 0) {
+      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Habis</span>';
+    } else if (balance <= 3) {
+      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Hampir Habis</span>';
+    } else {
+      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Tersedia</span>';
+    }
+
+    return `
+      <tr class="hover:bg-slate-50 transition">
+        <td class="p-3 font-semibold text-slate-900">${e.id}</td>
+        <td class="p-3 font-medium text-slate-800">${e.name}</td>
+        <td class="p-3 text-slate-500">${e.rules}</td>
+        <td class="p-3 text-right font-bold text-slate-900">${balance.toFixed(2)} Hari</td>
+        <td class="p-3 text-center">${statusBadge}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
     function logout() {
       localStorage.removeItem("nextime_user");
       window.location.href = "index.html";
     }
 
-    function switchMainTab(tab) {
-      ["pending", "leave", "overtime"].forEach(t => {
-        const view = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
-        const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
-        if (t === tab) {
-          view.classList.remove("hidden");
-          btn.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition";
-        } else {
-          view.classList.add("hidden");
-          btn.className = "px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition";
-        }
-      });
+function switchMainTab(tab) {
+  ["pending", "leave", "overtime", "balance"].forEach(t => {
+    const view = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    if (t === tab) {
+      view.classList.remove("hidden");
+      btn.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition whitespace-nowrap";
+    } else {
+      view.classList.add("hidden");
+      btn.className = "px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap";
     }
+  });
+}
 
     function openModal(id) { 
       document.getElementById(id).classList.remove("hidden"); 
@@ -581,6 +658,7 @@
 
           renderPendingTable();
           renderHistoryTables();
+          renderBalanceTable();
         } else {
           showDashAlert("error", "Error server: " + res.message);
         }

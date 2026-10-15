@@ -70,7 +70,6 @@
             <h2 class="font-bold text-sm text-slate-800">Menunggu Persetujuan</h2>
             <button onclick="loadDashboardData()" class="text-xs text-blue-600 hover:underline">Refresh Data</button>
           </div>
-          <!-- Real-Time Search for Tab 1 -->
           <div class="w-full sm:w-72">
             <input type="text" id="searchPending" oninput="renderPendingTable()" placeholder="Cari Employee ID, Nama, Tipe..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
@@ -84,7 +83,7 @@
                 <th class="p-3">Nama Karyawan</th>
                 <th class="p-3">Detail</th>
                 <th class="p-3">Tanggal / Waktu</th>
-                <th class="p-3">Alasan</th>
+                <th class="p-3">Alasan / Catatan</th>
                 <th class="p-3 text-right">Aksi</th>
               </tr>
             </thead>
@@ -101,7 +100,6 @@
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="font-bold text-sm text-slate-800">Semua Catatan Cuti</h2>
-          <!-- Real-Time Search for Tab 2 -->
           <div class="w-full sm:w-72">
             <input type="text" id="searchLeave" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Jenis Cuti..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
@@ -115,6 +113,7 @@
                 <th class="p-3">Jenis Cuti</th>
                 <th class="p-3">Periode</th>
                 <th class="p-3">Total Hari</th>
+                <th class="p-3">Catatan / Unpaid</th>
                 <th class="p-3">Status</th>
               </tr>
             </thead>
@@ -129,7 +128,6 @@
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="font-bold text-sm text-slate-800">Semua Catatan Lembur</h2>
-          <!-- Real-Time Search for Tab 3 -->
           <div class="w-full sm:w-72">
             <input type="text" id="searchOvertime" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Tipe Hari..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
@@ -153,12 +151,10 @@
     </div>
   </main>
 
-  <!-- MODAL: DESKTOP-STYLE CONFIRMATION DIALOG (Replaces window.confirm) -->
+  <!-- MODAL: DESKTOP-STYLE CONFIRMATION DIALOG -->
   <div id="modalConfirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-slate-100 overflow-hidden p-6 text-center transform transition-all">
-      <div id="confirmIconBox" class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center">
-        <!-- Dynamic SVG Icon -->
-      </div>
+      <div id="confirmIconBox" class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"></div>
       <h3 id="confirmTitle" class="text-sm font-bold text-slate-900 mb-1">Konfirmasi Persetujuan</h3>
       <p id="confirmDesc" class="text-xs text-slate-500 mb-5">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
       <div class="flex space-x-2">
@@ -172,9 +168,10 @@
     </div>
   </div>
 
-  <!-- MODAL: LEAVE REQUESTS FORM (AppSheet Replica) -->
+  <!-- MODAL: LEAVE REQUESTS FORM (Exact AppSheet Replica) -->
   <div id="modalLeave" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <!-- Modal Header -->
       <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/50">
         <div class="flex items-center space-x-2">
           <button type="button" onclick="closeModal('modalLeave')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
@@ -186,8 +183,10 @@
         </div>
       </div>
 
-      <div class="p-6 overflow-y-auto space-y-4 text-xs">
+      <!-- Form Body (Matching Screenshot) -->
+      <div class="p-6 overflow-y-auto space-y-3.5 text-xs">
         <form id="formLeaveActual" onsubmit="submitLeave(event)" class="space-y-3.5">
+          <!-- 1. Employee ID (Searchable Combobox) -->
           <div class="relative">
             <label class="block font-semibold text-slate-700 mb-1">Employee ID <span class="text-blue-600">*</span></label>
             <input type="text" id="leaveEmpInput" placeholder="Cari" autocomplete="off" oninput="onEmpSearchInput('leave')" onfocus="showEmpDropdown('leave')" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
@@ -195,16 +194,25 @@
             <div id="leaveEmpDropdownPanel" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg z-50 divide-y divide-slate-100"></div>
           </div>
 
-          <div id="leaveEmpBadge" class="hidden bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
-            <div class="flex justify-between">
-              <span>Nama: <strong id="lblLeaveEmpName">-</strong></span>
-              <span>Jabatan: <strong id="lblLeaveEmpRules">-</strong></span>
-            </div>
-            <div class="mt-1 text-slate-500">
-              Sisa Cuti Tahunan: <strong id="lblLeaveEmpBal" class="text-blue-600">0</strong> Hari
-            </div>
+          <!-- 2. Nama Karyawan (Readonly) -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nama Karyawan</label>
+            <input type="text" id="leaveEmpName" readonly placeholder="Nama Karyawan" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
           </div>
 
+          <!-- 3. Rules (Readonly) -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Rules</label>
+            <input type="text" id="leaveEmpRules" readonly placeholder="Rules / Posisi" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
+          </div>
+
+          <!-- 4. Leave Balance (Readonly) -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Leave Balance</label>
+            <input type="text" id="leaveEmpBalance" readonly value="0.00" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
+          </div>
+
+          <!-- 5. Start Date & End Date -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1">Start Date <span class="text-blue-600">*</span></label>
@@ -216,16 +224,19 @@
             </div>
           </div>
 
+          <!-- 6. Total Days -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Total Days</label>
             <input type="text" id="leaveTotalDays" value="0.00" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">
           </div>
 
+          <!-- 7. Leave Type -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Leave Type <span class="text-blue-600">*</span></label>
             <select id="leaveTypeSelect" required onchange="onDateOrTypeChange()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white"></select>
           </div>
 
+          <!-- 8. Request Type -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Request Type <span class="text-blue-600">*</span></label>
             <select id="leaveReqType" required onchange="onDateOrTypeChange()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white">
@@ -235,24 +246,40 @@
             </select>
           </div>
 
+          <!-- 9. Reason -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Reason <span class="text-blue-600">*</span></label>
-            <input type="text" id="leaveReason" required placeholder="Tulis alasan pengajuan cuti..." class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
+            <input type="text" id="leaveReason" required placeholder="Tulis alasan..." class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
           </div>
 
+          <!-- 10. Status Approval -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Status Approval</label>
             <input type="text" value="Pending" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500">
           </div>
 
+          <!-- 11. Payroll Balance Note (Dynamically shown if Unpaid Leave applies) -->
+          <div id="payrollNoteContainer" class="hidden">
+            <label class="block font-semibold text-amber-700 mb-1">Payroll Balance Note</label>
+            <input type="text" id="leavePayrollNote" readonly class="w-full p-2.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg text-xs font-semibold">
+          </div>
+
+          <!-- 12. Tanggal Pengajuan -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Tanggal Pengajuan</label>
             <input type="text" id="leaveTanggalPengajuan" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
           </div>
 
+          <!-- 13. Deduction from Leave Balance (Hari) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Deduction from Leave Balance (Hari)</label>
             <input type="text" id="leaveDeductionDisplay" value="0.0" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+          </div>
+
+          <!-- 14. Karyawan & Tanggal (Computed Badge) -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Karyawan & Tanggal</label>
+            <input type="text" id="leaveEmpDateTag" readonly placeholder="Nama Karyawan • Tanggal" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
           </div>
 
           <button type="submit" class="hidden"></button>
@@ -275,7 +302,7 @@
         </div>
       </div>
 
-      <div class="p-6 overflow-y-auto space-y-4 text-xs">
+      <div class="p-6 overflow-y-auto space-y-3.5 text-xs">
         <form id="formOtActual" onsubmit="submitOvertime(event)" class="space-y-3.5">
           <div class="relative">
             <label class="block font-semibold text-slate-700 mb-1">Employee ID <span class="text-indigo-600">*</span></label>
@@ -284,11 +311,14 @@
             <div id="otEmpDropdownPanel" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg z-50 divide-y divide-slate-100"></div>
           </div>
 
-          <div id="otEmpBadge" class="hidden bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
-            <div class="flex justify-between">
-              <span>Nama: <strong id="lblOtEmpName">-</strong></span>
-              <span>Jabatan: <strong id="lblOtEmpRules">-</strong></span>
-            </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nama Karyawan</label>
+            <input type="text" id="otEmpName" readonly placeholder="Nama Karyawan" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Rules</label>
+            <input type="text" id="otEmpRules" readonly placeholder="Rules / Posisi" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
           </div>
 
           <div>
@@ -344,17 +374,11 @@
     let appData = { employees: [], policies: [], leaveRequests: [], overtimeRecords: [] };
     let alertTimeout = null;
 
-    // Check if user role has approval authorization
     function isAuthorizedApprover(role) {
       if (!role) return false;
       const clean = String(role).trim().toLowerCase();
       return [
-        "admin",
-        "administrator",
-        "hr",
-        "factory manager",
-        "sample manager",
-        "supervisor"
+        "admin", "administrator", "hr", "factory manager", "sample manager", "supervisor"
       ].includes(clean);
     }
 
@@ -368,7 +392,6 @@
       return await res.json();
     }
 
-    // ── Global Alert with 2-Second Auto-Dismiss ──
     function showDashAlert(type, msg) {
       const box = document.getElementById("dashAlert");
       if (alertTimeout) clearTimeout(alertTimeout);
@@ -379,7 +402,6 @@
       box.textContent = msg;
       box.classList.remove("hidden", "fade-out");
 
-      // Auto-disappear after exactly 2 seconds (2000ms)
       alertTimeout = setTimeout(() => {
         box.classList.add("fade-out");
         setTimeout(() => box.classList.add("hidden"), 300);
@@ -415,7 +437,7 @@
       document.getElementById(id).classList.remove("flex"); 
     }
 
-    // ── Searchable Combobox Logic ──
+    // ── Searchable Combobox ──
     function showEmpDropdown(prefix) {
       renderEmpDropdown(prefix, appData.employees);
       document.getElementById(`${prefix}EmpDropdownPanel`).classList.remove("hidden");
@@ -449,18 +471,26 @@
       if (!emp) return;
 
       document.getElementById(`${prefix}EmpIdSelected`).value = emp.id;
-      document.getElementById(`${prefix}EmpInput`).value = `${emp.id} - ${emp.name}`;
+      document.getElementById(`${prefix}EmpInput`).value = emp.id;
       document.getElementById(`${prefix}EmpDropdownPanel`).classList.add("hidden");
 
       if (prefix === "leave") {
-        document.getElementById("lblLeaveEmpName").textContent = emp.name;
-        document.getElementById("lblLeaveEmpRules").textContent = emp.rules;
-        document.getElementById("lblLeaveEmpBal").textContent = emp.leaveBalance;
-        document.getElementById("leaveEmpBadge").classList.remove("hidden");
+        document.getElementById("leaveEmpName").value = emp.name;
+        document.getElementById("leaveEmpRules").value = emp.rules;
+        document.getElementById("leaveEmpBalance").value = Number(emp.leaveBalance).toFixed(2);
+        updateEmpDateTag();
+        onDateOrTypeChange();
       } else {
-        document.getElementById("lblOtEmpName").textContent = emp.name;
-        document.getElementById("lblOtEmpRules").textContent = emp.rules;
-        document.getElementById("otEmpBadge").classList.remove("hidden");
+        document.getElementById("otEmpName").value = emp.name;
+        document.getElementById("otEmpRules").value = emp.rules;
+      }
+    }
+
+    function updateEmpDateTag() {
+      const name = document.getElementById("leaveEmpName").value;
+      const today = document.getElementById("leaveTanggalPengajuan").value;
+      if (name) {
+        document.getElementById("leaveEmpDateTag").value = `${name} • ${today}`;
       }
     }
 
@@ -474,7 +504,7 @@
       });
     });
 
-    // ── Real-Time Total Days & Deduction Engine ──
+    // ── Real-Time Total Days, Unpaid Deficit & Deduction Engine ──
     function onDateOrTypeChange() {
       const reqType = document.getElementById("leaveReqType").value;
       const start = document.getElementById("leaveStart").value;
@@ -482,6 +512,8 @@
       const totalDaysInput = document.getElementById("leaveTotalDays");
       const deductionInput = document.getElementById("leaveDeductionDisplay");
       const selectedType = document.getElementById("leaveTypeSelect").value;
+      const empBalStr = document.getElementById("leaveEmpBalance").value;
+      const empBalance = parseFloat(empBalStr) || 0.00;
 
       let totalDays = 0.00;
 
@@ -501,23 +533,39 @@
       }
       totalDaysInput.value = totalDays.toFixed(2);
 
-      let deduction = 0.00;
+      // Determine required Annual Leave deduction based on Leave Policies
+      let neededAL = 0.00;
       const policy = appData.policies.find(p => p.type === selectedType);
       const allowed = policy ? policy.allowedDays : 0;
 
       if (allowed > 0) {
-        deduction = Math.max(0, totalDays - allowed);
+        neededAL = Math.max(0, totalDays - allowed);
       } else {
         const lower = (selectedType || "").toLowerCase();
         if (lower.includes("sakit") && lower.includes("dengan surat dokter")) {
-          deduction = 0.00;
+          neededAL = 0.00;
         } else if (lower.includes("medical checkup") && lower.includes("dengan surat dokter")) {
-          deduction = 0.00;
+          neededAL = 0.00;
         } else {
-          deduction = totalDays;
+          neededAL = totalDays;
         }
       }
-      deductionInput.value = deduction.toFixed(1);
+      deductionInput.value = neededAL.toFixed(1);
+
+      // Evaluate Unpaid Leave Deficit
+      const noteContainer = document.getElementById("payrollNoteContainer");
+      const noteInput = document.getElementById("leavePayrollNote");
+
+      if (selectedType && neededAL > empBalance) {
+        const unpaidDays = neededAL - empBalance;
+        // Format to clean decimal or whole number
+        const unpaidDisplay = unpaidDays % 1 === 0 ? unpaidDays : unpaidDays.toFixed(1);
+        noteInput.value = `Unpaid Leave: ${unpaidDisplay} Hari`;
+        noteContainer.classList.remove("hidden");
+      } else {
+        noteInput.value = "";
+        noteContainer.classList.add("hidden");
+      }
     }
 
     // ── Load Dashboard Data ──
@@ -541,7 +589,7 @@
       }
     }
 
-    // ── Render Tab 1: Persetujuan Tertunda (With Search Filter) ──
+    // ── Render Tab 1: Persetujuan Tertunda ──
     function renderPendingTable() {
       const tbody = document.getElementById("pendingTableBody");
       const canApprove = isAuthorizedApprover(currentUser.role);
@@ -579,7 +627,7 @@
             <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.rules}</span></td>
             <td class="p-3">${r.leaveType}<br><span class="text-slate-400 font-medium">${r.totalDays} Hari (${r.requestType})</span></td>
             <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
-            <td class="p-3">${r.reason}</td>
+            <td class="p-3">${r.reason}${r.note ? `<br><span class="text-amber-600 font-semibold text-[10px] bg-amber-50 px-1 py-0.5 rounded border border-amber-200">${r.note}</span>` : ''}</td>
             <td class="p-3 text-right">
               ${canApprove ? `
                 <div class="inline-flex space-x-1">
@@ -616,9 +664,8 @@
       tbody.innerHTML = html;
     }
 
-    // ── Render Tabs 2 & 3: Riwayat Cuti & Riwayat Lembur (With Search Filters) ──
+    // ── Render Tabs 2 & 3: Riwayat Cuti & Riwayat Lembur ──
     function renderHistoryTables() {
-      // Tab 2: Leave History
       const lQuery = (document.getElementById("searchLeave")?.value || "").toLowerCase();
       let leaves = appData.leaveRequests;
       if (lQuery) {
@@ -632,7 +679,7 @@
 
       const lBody = document.getElementById("leaveTableBody");
       if (leaves.length === 0) {
-        lBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada riwayat cuti yang cocok.</td></tr>';
+        lBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada riwayat cuti yang cocok.</td></tr>';
       } else {
         lBody.innerHTML = leaves.map(r => `
           <tr class="hover:bg-slate-50 transition">
@@ -641,6 +688,7 @@
             <td class="p-3">${r.leaveType}</td>
             <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
             <td class="p-3">${r.totalDays} Hari</td>
+            <td class="p-3">${r.note ? `<span class="text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${r.note}</span>` : '-'}</td>
             <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
               r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
             }">${r.status}</span></td>
@@ -648,7 +696,6 @@
         `).join("");
       }
 
-      // Tab 3: Overtime History
       const otQuery = (document.getElementById("searchOvertime")?.value || "").toLowerCase();
       let overtimes = appData.overtimeRecords;
       if (otQuery) {
@@ -686,6 +733,8 @@
       if (!empId) return alert("Pilih Employee ID terlebih dahulu.");
 
       const emp = appData.employees.find(e => e.id === empId);
+      const payrollNote = document.getElementById("leavePayrollNote").value;
+
       const payload = {
         employeeId: empId,
         employeeName: emp.name,
@@ -697,7 +746,7 @@
         endDate: document.getElementById("leaveEnd").value,
         totalDays: document.getElementById("leaveTotalDays").value,
         reason: document.getElementById("leaveReason").value,
-        note: ""
+        note: payrollNote || ""
       };
 
       const res = await callApi({ action: "submitLeave", payload: payload, email: currentUser.email });

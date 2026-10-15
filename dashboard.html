@@ -23,34 +23,73 @@
         <span class="font-bold text-lg text-slate-900 tracking-tight">NexTime</span>
       </div>
       <div class="flex items-center space-x-4">
-  <div class="text-right hidden sm:block">
-    <div class="text-xs font-semibold text-slate-900" id="navUserName">...</div>
-    <div class="text-[11px] text-slate-500" id="navUserRole">...</div>
-  </div>
+        <div class="text-right hidden sm:block">
+          <div class="text-xs font-semibold text-slate-900" id="navUserName">...</div>
+          <div class="text-[11px] text-slate-500" id="navUserRole">...</div>
+        </div>
 
-  <!-- Admin Panel Link Button (Visible only to Admin / Administrator) -->
-  <a id="btnAdminPortal" href="admin.html" class="hidden text-xs bg-slate-900 hover:bg-black text-white px-3 py-1.5 rounded-lg font-semibold transition">
-    ⚙️ Admin Panel
-  </a>
+        <!-- Admin Panel Link Button (Visible only to Admin / Administrator) -->
+        <a id="btnAdminPortal" href="admin.html" class="hidden text-xs bg-slate-900 hover:bg-black text-white px-3 py-1.5 rounded-lg font-semibold transition">
+          ⚙️ Admin Panel
+        </a>
 
-  <button onclick="logout()" class="text-xs bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-3 py-1.5 rounded-lg font-medium transition">
-    Logout
-  </button>
-</div>
+        <button onclick="logout()" class="text-xs bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-3 py-1.5 rounded-lg font-medium transition">
+          Logout
+        </button>
+      </div>
+    </div>
   </header>
 
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- DAILY ATTENDANCE & ACTIVITY WIDGET (Today's Cuti & Lembur) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <!-- Cuti Hari Ini Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-base">🌴</div>
+            <div>
+              <h3 class="font-bold text-xs text-slate-900">Cuti Hari Ini</h3>
+              <p class="text-[10px] text-slate-400" id="todayLeaveDateText">Memuat...</p>
+            </div>
+          </div>
+          <span id="badgeTodayLeaveCount" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">0 Karyawan</span>
+        </div>
+        <div id="todayLeaveContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Lembur Hari Ini Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">⏱️</div>
+            <div>
+              <h3 class="font-bold text-xs text-slate-900">Lembur Hari Ini</h3>
+              <p class="text-[10px] text-slate-400" id="todayOtDateText">Memuat...</p>
+            </div>
+          </div>
+          <span id="badgeTodayOtCount" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">0 Karyawan</span>
+        </div>
+        <div id="todayOtContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </div>
+
     <!-- Action Bar -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div class="flex space-x-2 border-b border-slate-200 sm:border-0 pb-2 sm:pb-0 w-full sm:w-auto overflow-x-auto">
-        <button id="tabPending" onclick="switchMainTab('pending')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition">
+        <button id="tabPending" onclick="switchMainTab('pending')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition whitespace-nowrap">
           Persetujuan Tertunda
         </button>
-        <button id="tabLeave" onclick="switchMainTab('leave')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
+        <button id="tabLeave" onclick="switchMainTab('leave')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">
           Riwayat Cuti
         </button>
-        <button id="tabOvertime" onclick="switchMainTab('overtime')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
+        <button id="tabOvertime" onclick="switchMainTab('overtime')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">
           Riwayat Lembur
         </button>
         <button id="tabBalance" onclick="switchMainTab('balance')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">
@@ -137,7 +176,7 @@
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="font-bold text-sm text-slate-800">Semua Catatan Lembur</h2>
           <div class="w-full sm:w-72">
-            <input type="text" id="searchOvertime" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Tipe Hari..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <input type="text" id="searchOvertime" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Periode..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -146,6 +185,7 @@
               <tr>
                 <th class="p-3">Employee ID</th>
                 <th class="p-3">Nama Karyawan</th>
+                <th class="p-3">Periode Payroll</th>
                 <th class="p-3">Tanggal</th>
                 <th class="p-3">Jam Kerja</th>
                 <th class="p-3">Tipe Hari</th>
@@ -157,36 +197,37 @@
         </div>
       </div>
     </div>
+
     <!-- Tab 4: Saldo Cuti Karyawan (Read-Only) -->
-<div id="viewBalance" class="hidden space-y-4">
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-    <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div>
-        <h2 class="font-bold text-sm text-slate-800">Daftar Saldo Cuti Karyawan</h2>
-        <p class="text-[11px] text-slate-400 mt-0.5">Informasi kuota cuti tahunan aktif per karyawan</p>
-      </div>
-      <div class="w-full sm:w-72">
-        <input type="text" id="searchBalance" oninput="renderBalanceTable()" placeholder="Cari Employee ID, Nama, Posisi..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    <div id="viewBalance" class="hidden space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-sm text-slate-800">Daftar Saldo Cuti Karyawan</h2>
+            <p class="text-[11px] text-slate-400 mt-0.5">Informasi kuota cuti tahunan aktif per karyawan</p>
+          </div>
+          <div class="w-full sm:w-72">
+            <input type="text" id="searchBalance" oninput="renderBalanceTable()" placeholder="Cari Employee ID, Nama, Posisi..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+              <tr>
+                <th class="p-3">Employee ID</th>
+                <th class="p-3">Nama Karyawan</th>
+                <th class="p-3">Rules / Posisi</th>
+                <th class="p-3 text-right">Sisa Saldo Cuti</th>
+                <th class="p-3 text-center">Status Kuota</th>
+              </tr>
+            </thead>
+            <tbody id="balanceTableBody" class="divide-y divide-slate-100">
+              <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-xs">
-        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
-          <tr>
-            <th class="p-3">Employee ID</th>
-            <th class="p-3">Nama Karyawan</th>
-            <th class="p-3">Rules / Posisi</th>
-            <th class="p-3 text-right">Sisa Saldo Cuti</th>
-            <th class="p-3 text-center">Status Kuota</th>
-          </tr>
-        </thead>
-        <tbody id="balanceTableBody" class="divide-y divide-slate-100">
-          <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
   </main>
 
   <!-- MODAL: DESKTOP-STYLE CONFIRMATION DIALOG -->
@@ -206,10 +247,9 @@
     </div>
   </div>
 
-  <!-- MODAL: LEAVE REQUESTS FORM (Exact AppSheet Replica) -->
+  <!-- MODAL: LEAVE REQUESTS FORM -->
   <div id="modalLeave" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
-      <!-- Modal Header -->
       <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/50">
         <div class="flex items-center space-x-2">
           <button type="button" onclick="closeModal('modalLeave')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
@@ -221,36 +261,30 @@
         </div>
       </div>
 
-      <!-- Form Body (Matching Screenshot) -->
       <div class="p-6 overflow-y-auto space-y-3.5 text-xs">
         <form id="formLeaveActual" onsubmit="submitLeave(event)" class="space-y-3.5">
-          <!-- 1. Employee ID (Searchable Combobox) -->
           <div class="relative">
             <label class="block font-semibold text-slate-700 mb-1">Employee ID <span class="text-blue-600">*</span></label>
-            <input type="text" id="leaveEmpInput" placeholder="Cari" autocomplete="off" oninput="onEmpSearchInput('leave')" onfocus="showEmpDropdown('leave')" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+            <input type="text" id="leaveEmpInput" placeholder="Cari Employee ID atau Nama..." autocomplete="off" oninput="onEmpSearchInput('leave')" onfocus="showEmpDropdown('leave')" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
             <input type="hidden" id="leaveEmpIdSelected" required>
             <div id="leaveEmpDropdownPanel" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg z-50 divide-y divide-slate-100"></div>
           </div>
 
-          <!-- 2. Nama Karyawan (Readonly) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Nama Karyawan</label>
             <input type="text" id="leaveEmpName" readonly placeholder="Nama Karyawan" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
           </div>
 
-          <!-- 3. Rules (Readonly) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Rules</label>
             <input type="text" id="leaveEmpRules" readonly placeholder="Rules / Posisi" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
           </div>
 
-          <!-- 4. Leave Balance (Readonly) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Leave Balance</label>
             <input type="text" id="leaveEmpBalance" readonly value="0.00" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
           </div>
 
-          <!-- 5. Start Date & End Date -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1">Start Date <span class="text-blue-600">*</span></label>
@@ -262,19 +296,16 @@
             </div>
           </div>
 
-          <!-- 6. Total Days -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Total Days</label>
             <input type="text" id="leaveTotalDays" value="0.00" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">
           </div>
 
-          <!-- 7. Leave Type -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Leave Type <span class="text-blue-600">*</span></label>
             <select id="leaveTypeSelect" required onchange="onDateOrTypeChange()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white"></select>
           </div>
 
-          <!-- 8. Request Type -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Request Type <span class="text-blue-600">*</span></label>
             <select id="leaveReqType" required onchange="onDateOrTypeChange()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white">
@@ -284,37 +315,31 @@
             </select>
           </div>
 
-          <!-- 9. Reason -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Reason <span class="text-blue-600">*</span></label>
             <input type="text" id="leaveReason" required placeholder="Tulis alasan..." class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
           </div>
 
-          <!-- 10. Status Approval -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Status Approval</label>
             <input type="text" value="Pending" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500">
           </div>
 
-          <!-- 11. Payroll Balance Note (Dynamically shown if Unpaid Leave applies) -->
           <div id="payrollNoteContainer" class="hidden">
             <label class="block font-semibold text-amber-700 mb-1">Payroll Balance Note</label>
             <input type="text" id="leavePayrollNote" readonly class="w-full p-2.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg text-xs font-semibold">
           </div>
 
-          <!-- 12. Tanggal Pengajuan -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Tanggal Pengajuan</label>
             <input type="text" id="leaveTanggalPengajuan" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
           </div>
 
-          <!-- 13. Deduction from Leave Balance (Hari) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Deduction from Leave Balance (Hari)</label>
             <input type="text" id="leaveDeductionDisplay" value="0.0" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
           </div>
 
-          <!-- 14. Karyawan & Tanggal (Computed Badge) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Karyawan & Tanggal</label>
             <input type="text" id="leaveEmpDateTag" readonly placeholder="Nama Karyawan • Tanggal" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
@@ -326,7 +351,7 @@
     </div>
   </div>
 
-  <!-- MODAL: OVERTIME REQUESTS FORM -->
+  <!-- MODAL: OVERTIME REQUESTS FORM (With Periode Payroll Dropdown) -->
   <div id="modalOvertime" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
       <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/50">
@@ -344,7 +369,7 @@
         <form id="formOtActual" onsubmit="submitOvertime(event)" class="space-y-3.5">
           <div class="relative">
             <label class="block font-semibold text-slate-700 mb-1">Employee ID <span class="text-indigo-600">*</span></label>
-            <input type="text" id="otEmpInput" placeholder="Cari" autocomplete="off" oninput="onEmpSearchInput('ot')" onfocus="showEmpDropdown('ot')" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+            <input type="text" id="otEmpInput" placeholder="Cari Employee ID atau Nama..." autocomplete="off" oninput="onEmpSearchInput('ot')" onfocus="showEmpDropdown('ot')" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
             <input type="hidden" id="otEmpIdSelected" required>
             <div id="otEmpDropdownPanel" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg z-50 divide-y divide-slate-100"></div>
           </div>
@@ -360,16 +385,8 @@
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Tanggal Lembur <span class="text-indigo-600">*</span></label>
-            <input type="date" id="otDate" required class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Tipe Hari</label>
-            <select id="otDayType" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white">
-              <option value="Hari Kerja">Hari Kerja</option>
-              <option value="Hari Libur">Hari Libur</option>
-            </select>
+            <label class="block font-semibold text-slate-700 mb-1">Alasan Lembur <span class="text-indigo-600">*</span></label>
+            <input type="text" id="otReason" required placeholder="Tulis instruksi lembur..." class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -384,9 +401,43 @@
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Alasan Lembur <span class="text-indigo-600">*</span></label>
-            <input type="text" id="otReason" required placeholder="Tulis instruksi lembur..." class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
+            <label class="block font-semibold text-slate-700 mb-1">Tipe Hari <span class="text-indigo-600">*</span></label>
+            <select id="otDayType" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white">
+              <option value="Hari Kerja">Hari Kerja</option>
+              <option value="Hari Libur">Hari Libur</option>
+            </select>
           </div>
+
+          <!-- PERIODE PAYROLL (JANUARI - DESEMBER DROPDOWN) -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Periode Payroll <span class="text-indigo-600">*</span></label>
+            <select id="otPayrollPeriod" required class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500">
+              <option value="">-- Pilih Periode Payroll --</option>
+              <option value="Januari">Januari</option>
+              <option value="Februari">Februari</option>
+              <option value="Maret">Maret</option>
+              <option value="April">April</option>
+              <option value="Mei">Mei</option>
+              <option value="Juni">Juni</option>
+              <option value="Juli">Juli</option>
+              <option value="Agustus">Agustus</option>
+              <option value="September">September</option>
+              <option value="Oktober">Oktober</option>
+              <option value="November">November</option>
+              <option value="Desember">Desember</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Tanggal Lembur <span class="text-indigo-600">*</span></label>
+            <input type="date" id="otDate" required onchange="syncPayrollMonthWithDate()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Status Approval</label>
+            <input type="text" value="Pending" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500">
+          </div>
+
           <button type="submit" class="hidden"></button>
         </form>
       </div>
@@ -396,34 +447,47 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxO0spFhKspoBXznN-fKjbRtdP6R4mnCdLNxiX4oUhD4dRZEVjpfwY392b-nvbPtzQw/exec";
     
- // Auth Guard
-const userStr = localStorage.getItem("nextime_user");
-if (!userStr) window.location.href = "index.html";
-const currentUser = JSON.parse(userStr);
+    // Auth Guard
+    const userStr = localStorage.getItem("nextime_user");
+    if (!userStr) window.location.href = "index.html";
+    const currentUser = JSON.parse(userStr);
 
-document.getElementById("navUserName").textContent = currentUser.fullName;
-document.getElementById("navUserRole").textContent = `${currentUser.role} | ${currentUser.email}`;
+    document.getElementById("navUserName").textContent = currentUser.fullName;
+    document.getElementById("navUserRole").textContent = `${currentUser.role} | ${currentUser.email}`;
 
-// Unhide Admin Portal button if role is Admin / Administrator
-if (["admin", "administrator"].includes(String(currentUser.role || "").trim().toLowerCase())) {
-  document.getElementById("btnAdminPortal")?.classList.remove("hidden");
-}
+    if (["admin", "administrator"].includes(String(currentUser.role || "").trim().toLowerCase())) {
+      document.getElementById("btnAdminPortal")?.classList.remove("hidden");
+    }
 
-// Set today's date formatted dd/mm/yyyy
-const now = new Date();
-const formattedToday = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-document.getElementById("leaveTanggalPengajuan").value = formattedToday;
+    const MONTHS_INDO = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
 
-let appData = { employees: [], policies: [], leaveRequests: [], overtimeRecords: [] };
-let alertTimeout = null;
+    // Local ISO Date helper (avoids UTC timezone shift)
+    function getLocalIsoDate() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
 
-function isAuthorizedApprover(role) {
-  if (!role) return false;
-  const clean = String(role).trim().toLowerCase();
-  return [
-    "admin", "administrator", "hr", "factory manager", "sample manager", "supervisor"
-  ].includes(clean);
-}
+    // Set today's date formatted dd/mm/yyyy
+    const now = new Date();
+    const formattedToday = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    document.getElementById("leaveTanggalPengajuan").value = formattedToday;
+
+    let appData = { employees: [], policies: [], leaveRequests: [], overtimeRecords: [] };
+    let alertTimeout = null;
+
+    function isAuthorizedApprover(role) {
+      if (!role) return false;
+      const clean = String(role).trim().toLowerCase();
+      return [
+        "admin", "administrator", "hr", "factory manager", "sample manager", "supervisor"
+      ].includes(clean);
+    }
 
     async function callApi(payload) {
       const res = await fetch(API_URL, {
@@ -451,77 +515,53 @@ function isAuthorizedApprover(role) {
       }, 2000);
     }
 
-// ── Render Tab 4: Saldo Cuti Karyawan (Read-Only) ──
-function renderBalanceTable() {
-  const tbody = document.getElementById("balanceTableBody");
-  const query = (document.getElementById("searchBalance")?.value || "").toLowerCase();
-
-  let list = appData.employees || [];
-  if (query) {
-    list = list.filter(e =>
-      e.id.toLowerCase().includes(query) ||
-      e.name.toLowerCase().includes(query) ||
-      e.rules.toLowerCase().includes(query)
-    );
-  }
-
-  if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Tidak ada data karyawan yang cocok.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = list.map(e => {
-    const balance = Number(e.leaveBalance) || 0;
-    
-    // SaaS visual indicator: low balance vs available balance
-    let statusBadge = "";
-    if (balance <= 0) {
-      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Habis</span>';
-    } else if (balance <= 3) {
-      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Hampir Habis</span>';
-    } else {
-      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Tersedia</span>';
-    }
-
-    return `
-      <tr class="hover:bg-slate-50 transition">
-        <td class="p-3 font-semibold text-slate-900">${e.id}</td>
-        <td class="p-3 font-medium text-slate-800">${e.name}</td>
-        <td class="p-3 text-slate-500">${e.rules}</td>
-        <td class="p-3 text-right font-bold text-slate-900">${balance.toFixed(2)} Hari</td>
-        <td class="p-3 text-center">${statusBadge}</td>
-      </tr>
-    `;
-  }).join("");
-}
-
     function logout() {
       localStorage.removeItem("nextime_user");
       window.location.href = "index.html";
     }
 
-function switchMainTab(tab) {
-  ["pending", "leave", "overtime", "balance"].forEach(t => {
-    const view = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
-    const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
-    if (t === tab) {
-      view.classList.remove("hidden");
-      btn.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition whitespace-nowrap";
-    } else {
-      view.classList.add("hidden");
-      btn.className = "px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap";
+    function switchMainTab(tab) {
+      ["pending", "leave", "overtime", "balance"].forEach(t => {
+        const view = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (t === tab) {
+          view.classList.remove("hidden");
+          btn.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition whitespace-nowrap";
+        } else {
+          view.classList.add("hidden");
+          btn.className = "px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition whitespace-nowrap";
+        }
+      });
     }
-  });
-}
 
     function openModal(id) { 
       document.getElementById(id).classList.remove("hidden"); 
       document.getElementById(id).classList.add("flex"); 
+      
+      if (id === "modalOvertime") {
+        const currentMonth = MONTHS_INDO[new Date().getMonth()];
+        const select = document.getElementById("otPayrollPeriod");
+        if (select && !select.value) {
+          select.value = currentMonth;
+        }
+      }
+
       if (appData.employees.length === 0) loadDashboardData();
     }
+
     function closeModal(id) { 
       document.getElementById(id).classList.add("hidden"); 
       document.getElementById(id).classList.remove("flex"); 
+    }
+
+    function syncPayrollMonthWithDate() {
+      const val = document.getElementById("otDate").value;
+      if (!val) return;
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        const monthName = MONTHS_INDO[d.getMonth()];
+        document.getElementById("otPayrollPeriod").value = monthName;
+      }
     }
 
     // ── Searchable Combobox ──
@@ -620,7 +660,6 @@ function switchMainTab(tab) {
       }
       totalDaysInput.value = totalDays.toFixed(2);
 
-      // Determine required Annual Leave deduction based on Leave Policies
       let neededAL = 0.00;
       const policy = appData.policies.find(p => p.type === selectedType);
       const allowed = policy ? policy.allowedDays : 0;
@@ -639,19 +678,86 @@ function switchMainTab(tab) {
       }
       deductionInput.value = neededAL.toFixed(1);
 
-      // Evaluate Unpaid Leave Deficit
       const noteContainer = document.getElementById("payrollNoteContainer");
       const noteInput = document.getElementById("leavePayrollNote");
 
       if (selectedType && neededAL > empBalance) {
         const unpaidDays = neededAL - empBalance;
-        // Format to clean decimal or whole number
         const unpaidDisplay = unpaidDays % 1 === 0 ? unpaidDays : unpaidDays.toFixed(1);
         noteInput.value = `Unpaid Leave: ${unpaidDisplay} Hari`;
         noteContainer.classList.remove("hidden");
       } else {
         noteInput.value = "";
         noteContainer.classList.add("hidden");
+      }
+    }
+
+    // ── Live Daily Activity Widget (Today's Cuti & Lembur) ──
+    function renderDailyWidgets() {
+      const todayIso = getLocalIsoDate();
+      const formattedDateHeader = new Date().toLocaleDateString("id-ID", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric"
+      });
+
+      document.getElementById("todayLeaveDateText").textContent = formattedDateHeader;
+      document.getElementById("todayOtDateText").textContent = formattedDateHeader;
+
+      // 1. Cuti Hari Ini
+      const activeLeaves = (appData.leaveRequests || []).filter(r => 
+        r.status === "Disetujui" && r.startDate <= todayIso && todayIso <= r.endDate
+      );
+
+      const lBadge = document.getElementById("badgeTodayLeaveCount");
+      const lContainer = document.getElementById("todayLeaveContainer");
+      lBadge.textContent = `${activeLeaves.length} Karyawan`;
+
+      if (activeLeaves.length === 0) {
+        lContainer.innerHTML = `
+          <div class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl flex items-center space-x-2.5 text-emerald-800">
+            <span class="text-sm">✨</span>
+            <span class="font-medium text-[11px]">100% Tim Hadir — Seluruh staf aktif bekerja hari ini.</span>
+          </div>
+        `;
+      } else {
+        lContainer.innerHTML = activeLeaves.map(l => `
+          <div class="p-2.5 bg-blue-50/60 border border-blue-100 rounded-xl flex justify-between items-center transition hover:bg-blue-50">
+            <div>
+              <div class="font-bold text-slate-800">${l.employeeName} <span class="text-[10px] text-slate-400 font-normal">(${l.rules})</span></div>
+              <div class="text-[10px] text-blue-600 font-semibold">${l.leaveType} (${l.requestType})</div>
+            </div>
+            <div class="text-right text-[10px] text-slate-400 font-medium">
+              s/d ${l.endDate}
+            </div>
+          </div>
+        `).join("");
+      }
+
+      // 2. Lembur Hari Ini
+      const activeOts = (appData.overtimeRecords || []).filter(r => 
+        r.status === "Disetujui" && r.date === todayIso
+      );
+
+      const otBadge = document.getElementById("badgeTodayOtCount");
+      const otContainer = document.getElementById("todayOtContainer");
+      otBadge.textContent = `${activeOts.length} Karyawan`;
+
+      if (activeOts.length === 0) {
+        otContainer.innerHTML = `
+          <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center space-x-2.5 text-slate-600">
+            <span class="text-sm">📋</span>
+            <span class="font-medium text-[11px]">Tidak ada jadwal lembur yang disetujui untuk hari ini.</span>
+          </div>
+        `;
+      } else {
+        otContainer.innerHTML = activeOts.map(o => `
+          <div class="p-2.5 bg-indigo-50/60 border border-indigo-100 rounded-xl flex justify-between items-center transition hover:bg-indigo-50">
+            <div>
+              <div class="font-bold text-slate-800">${o.employeeName} <span class="text-[10px] text-slate-400 font-normal">(${o.rules})</span></div>
+              <div class="text-[10px] text-indigo-600 font-semibold">${o.startTime} - ${o.endTime} • ${o.dayType}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">${o.payrollPeriod || 'Bulan Ini'}</span>
+          </div>
+        `).join("");
       }
     }
 
@@ -666,6 +772,7 @@ function switchMainTab(tab) {
           polSelect.innerHTML = '<option value="">-- Pilih Leave Type --</option>' + 
             appData.policies.map(p => `<option value="${p.type}">${p.type} ${p.allowedDays > 0 ? '(' + p.allowedDays + ' Hari)' : ''}</option>`).join("");
 
+          renderDailyWidgets();
           renderPendingTable();
           renderHistoryTables();
           renderBalanceTable();
@@ -697,6 +804,7 @@ function switchMainTab(tab) {
           r.employeeId.toLowerCase().includes(query) || 
           r.employeeName.toLowerCase().includes(query) || 
           r.dayType.toLowerCase().includes(query) ||
+          (r.payrollPeriod || "").toLowerCase().includes(query) ||
           r.reason.toLowerCase().includes(query)
         );
       }
@@ -734,7 +842,7 @@ function switchMainTab(tab) {
             <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">LEMBUR</span></td>
             <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
             <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.rules}</span></td>
-            <td class="p-3">${r.dayType}</td>
+            <td class="p-3">${r.dayType}<br><span class="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">${r.payrollPeriod || '-'}</span></td>
             <td class="p-3">${r.date}<br><span class="text-slate-400 font-medium">${r.startTime} - ${r.endTime}</span></td>
             <td class="p-3">${r.reason}</td>
             <td class="p-3 text-right">
@@ -791,18 +899,20 @@ function switchMainTab(tab) {
           r.employeeId.toLowerCase().includes(otQuery) || 
           r.employeeName.toLowerCase().includes(otQuery) || 
           r.dayType.toLowerCase().includes(otQuery) ||
+          (r.payrollPeriod || "").toLowerCase().includes(otQuery) ||
           r.status.toLowerCase().includes(otQuery)
         );
       }
 
       const otBody = document.getElementById("overtimeTableBody");
       if (overtimes.length === 0) {
-        otBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada riwayat lembur yang cocok.</td></tr>';
+        otBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada riwayat lembur yang cocok.</td></tr>';
       } else {
         otBody.innerHTML = overtimes.map(r => `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
             <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
+            <td class="p-3 font-semibold text-slate-800"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">${r.payrollPeriod || '-'}</span></td>
             <td class="p-3">${r.date}</td>
             <td class="p-3">${r.startTime} - ${r.endTime}</td>
             <td class="p-3">${r.dayType}</td>
@@ -812,6 +922,48 @@ function switchMainTab(tab) {
           </tr>
         `).join("");
       }
+    }
+
+    // ── Render Tab 4: Saldo Cuti Karyawan ──
+    function renderBalanceTable() {
+      const tbody = document.getElementById("balanceTableBody");
+      const query = (document.getElementById("searchBalance")?.value || "").toLowerCase();
+
+      let list = appData.employees || [];
+      if (query) {
+        list = list.filter(e =>
+          e.id.toLowerCase().includes(query) ||
+          e.name.toLowerCase().includes(query) ||
+          e.rules.toLowerCase().includes(query)
+        );
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Tidak ada data karyawan yang cocok.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(e => {
+        const balance = Number(e.leaveBalance) || 0;
+        let statusBadge = "";
+        if (balance <= 0) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Habis</span>';
+        } else if (balance <= 3) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Hampir Habis</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Tersedia</span>';
+        }
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-semibold text-slate-900">${e.id}</td>
+            <td class="p-3 font-medium text-slate-800">${e.name}</td>
+            <td class="p-3 text-slate-500">${e.rules}</td>
+            <td class="p-3 text-right font-bold text-slate-900">${balance.toFixed(2)} Hari</td>
+            <td class="p-3 text-center">${statusBadge}</td>
+          </tr>
+        `;
+      }).join("");
     }
 
     // ── Submit Handlers ──
@@ -857,6 +1009,7 @@ function switchMainTab(tab) {
         employeeId: empId,
         employeeName: emp.name,
         rules: emp.rules,
+        payrollPeriod: document.getElementById("otPayrollPeriod").value,
         date: document.getElementById("otDate").value,
         dayType: document.getElementById("otDayType").value,
         startTime: document.getElementById("otStart").value,
@@ -874,7 +1027,7 @@ function switchMainTab(tab) {
       }
     }
 
-    // ── Desktop-Style Centered Confirmation Modal ──
+    // ── Approval Confirmation Dialog ──
     let pendingApprovalAction = null;
 
     function requestApprovalConfirmation(type, recordId, decision, employeeName, employeeId) {
@@ -947,54 +1100,48 @@ function switchMainTab(tab) {
       }
     }
 
-function formatTimeClean(val) {
-  if (!val) return "";
-  const str = String(val).trim();
-
-  // If received as an ISO string (e.g. 1899-12-30T17:00:00.000Z)
-  if (str.includes("T")) {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      // Use standard hours and minutes
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      return `${hours}:${minutes}`;
+    function formatTimeClean(val) {
+      if (!val) return "";
+      const str = String(val).trim();
+      if (str.includes("T")) {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          const hours = String(d.getHours()).padStart(2, '0');
+          const minutes = String(d.getMinutes()).padStart(2, '0');
+          return `${hours}:${minutes}`;
+        }
+        return str.split("T")[1].substring(0, 5);
+      }
+      return (str.length > 5 && str.includes(":")) ? str.substring(0, 5) : str;
     }
-    // Fallback if Date parsing fails
-    return str.split("T")[1].substring(0, 5);
-  }
 
-  // If already standard HH:mm or HH:mm:ss
-  return (str.length > 5 && str.includes(":")) ? str.substring(0, 5) : str;
-}
+    function triggerWhatsAppDispatch(data) {
+      let msg = "";
+      if (data.type === "leave") {
+        if (data.decision === "Disetujui") {
+          msg = `Halo ${data.name}, pengajuan CUTI Anda telah DISETUJUI.\n\nDetail Cuti:\nTipe: ${data.leaveType}\nTanggal: ${data.startDate} s/d ${data.endDate}\nTotal: ${data.totalDays} Hari\nAlasan: ${data.reason}`;
+          if (data.note) msg += `\nCatatan: ${data.note}`;
+          if (data.deduction > 0) msg += `\nPotong AL: ${data.deduction} Hari`;
+        } else {
+          msg = `Halo ${data.name}, pengajuan CUTI Anda telah DITOLAK.\n\nDetail Cuti:\nTipe: ${data.leaveType}\nTanggal: ${data.startDate} s/d ${data.endDate}\nAlasan: ${data.reason}`;
+        }
+      } else if (data.type === "overtime") {
+        const sTime = formatTimeClean(data.startTime);
+        const eTime = formatTimeClean(data.endTime);
 
-function triggerWhatsAppDispatch(data) {
-  let msg = "";
-  if (data.type === "leave") {
-    if (data.decision === "Disetujui") {
-      msg = `Halo ${data.name}, pengajuan CUTI Anda telah DISETUJUI.\n\nDetail Cuti:\n- Tipe Cuti: ${data.leaveType}\n- Jenis Pengajuan: ${data.requestType}\n- Tanggal: ${data.startDate} s/d ${data.endDate}\n- Total Hari: ${data.totalDays} Hari\n- Alasan: ${data.reason}`;
-      if (data.note) msg += `\nCatatan: ${data.note}`;
-      if (data.deduction > 0) msg += `\nJumlah Potong AL: ${data.deduction} Hari`;
-    } else {
-      msg = `Halo ${data.name}, pengajuan CUTI Anda telah *DITOLAK*.\n\nDetail Cuti:\n- Tipe Cuti: ${data.leaveType}\n- Jenis Pengajuan: ${data.requestType}\n- Tanggal: ${data.startDate} s/d ${data.endDate}\n- Total Hari: ${data.totalDays} Hari\n- Alasan: ${data.reason}`;
+        if (data.decision === "Disetujui") {
+          msg = `Halo ${data.name}, pengajuan LEMBUR Anda telah DISETUJUI.\n\nDetail Lembur:\nTanggal: ${data.date}\nJam: ${sTime} - ${eTime}\nAlasan: ${data.reason}`;
+        } else {
+          msg = `Halo ${data.name}, pengajuan LEMBUR Anda telah DITOLAK.\n\nDetail Lembur:\nTanggal: ${data.date}\nAlasan: ${data.reason}`;
+        }
+      }
+
+      const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const domain = isMobile ? "https://api.whatsapp.com/send?phone=" : "https://web.whatsapp.com/send?phone=";
+      const targetUrl = `${domain}${data.phone}&text=${encodeURIComponent(msg)}`;
+
+      window.open(targetUrl, "_blank");
     }
-  } else if (data.type === "overtime") {
-    const sTime = formatTimeClean(data.startTime);
-    const eTime = formatTimeClean(data.endTime);
-
-    if (data.decision === "Disetujui") {
-      msg = `Halo ${data.name}, pengajuan LEMBUR Anda telah DISETUJUI.\n\nDetail Lembur:\n- Tanggal: ${data.date}\n- Tipe Hari: ${data.dayType}\n- Jam Kerja: ${sTime} - ${eTime}\n- Alasan: ${data.reason}`;
-    } else {
-      msg = `Halo ${data.name}, mohon maaf pengajuan LEMBUR Anda telah DITOLAK.\n\nDetail Lembur:\n- Tanggal: ${data.date}\n- Tipe Hari: ${data.dayType}\n- Jam Kerja: ${sTime} - ${eTime}\n- Alasan: ${data.reason}`;
-    }
-  }
-
-  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const domain = isMobile ? "https://api.whatsapp.com/send?phone=" : "https://web.whatsapp.com/send?phone=";
-  const targetUrl = `${domain}${data.phone}&text=${encodeURIComponent(msg)}`;
-
-  window.open(targetUrl, "_blank");
-}
 
     // Initialize Dashboard
     loadDashboardData();

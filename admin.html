@@ -456,6 +456,7 @@
       return diffMin / 60;
     }
 
+// ── Updated renderActiveReport with Submitter & Approver Columns (Point 1 Fix) ──
     function renderActiveReport() {
       const startFilter = document.getElementById("repFilterStart")?.value || "";
       const endFilter = document.getElementById("repFilterEnd")?.value || "";
@@ -476,7 +477,8 @@
           records = records.filter(r =>
             (r.employeeId || "").toLowerCase().includes(q) ||
             (r.employeeName || "").toLowerCase().includes(q) ||
-            (r.leaveType || "").toLowerCase().includes(q) ||
+            (r.submittedBy || "").toLowerCase().includes(q) ||
+            (r.approvedBy || "").toLowerCase().includes(q) ||
             (r.reason || "").toLowerCase().includes(q)
           );
         }
@@ -495,7 +497,7 @@
             <div class="text-lg font-bold text-slate-900 mt-1">${totalReq}</div>
           </div>
           <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 shadow-sm">
-            <span class="text-blue-600 text-[10px] font-semibold uppercase">Hari Cuti Disetujui</span>
+            <span class="text-blue-600 text-[10px] font-semibold uppercase">Hari Disetujui</span>
             <div class="text-lg font-bold text-blue-900 mt-1">${totalApprovedDays.toFixed(1)} <span class="text-xs font-normal">Hari</span></div>
           </div>
           <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100 shadow-sm">
@@ -503,7 +505,7 @@
             <div class="text-lg font-bold text-amber-900 mt-1">${pendingCount}</div>
           </div>
           <div class="bg-rose-50/60 p-3.5 rounded-xl border border-rose-100 shadow-sm">
-            <span class="text-rose-600 text-[10px] font-semibold uppercase">Kasus Unpaid Leave</span>
+            <span class="text-rose-600 text-[10px] font-semibold uppercase">Unpaid Leave</span>
             <div class="text-lg font-bold text-rose-900 mt-1">${unpaidCount}</div>
           </div>
         `;
@@ -512,29 +514,27 @@
           <tr>
             <th class="p-3 bg-slate-50">ID Pengajuan</th>
             <th class="p-3 bg-slate-50">Karyawan</th>
-            <th class="p-3 bg-slate-50">Tipe Cuti</th>
-            <th class="p-3 bg-slate-50">Periode Cuti</th>
-            <th class="p-3 bg-slate-50 text-right">Total Hari</th>
-            <th class="p-3 bg-slate-50">Alasan</th>
-            <th class="p-3 bg-slate-50">Catatan / Payroll</th>
+            <th class="p-3 bg-slate-50">Tipe & Periode</th>
+            <th class="p-3 bg-slate-50 text-right">Hari</th>
+            <th class="p-3 bg-slate-50">Diajukan Oleh</th>
+            <th class="p-3 bg-slate-50">Disetujui Oleh</th>
             <th class="p-3 bg-slate-50 text-center">Status</th>
           </tr>
         `;
 
         if (records.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada catatan cuti yang cocok dengan filter.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada catatan cuti sesuai filter.</td></tr>';
           return;
         }
 
         tbody.innerHTML = records.map(r => `
-          <tr class="hover:bg-slate-50 transition">
+          <tr class="hover:bg-slate-50 transition text-xs">
             <td class="p-3 font-semibold text-slate-900">${r.leaveId}</td>
-            <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400 font-mono text-[11px]">${r.employeeId} • ${r.rules}</span></td>
-            <td class="p-3">${r.leaveType}<br><span class="text-slate-400 text-[11px]">${r.requestType}</span></td>
-            <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
+            <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400 font-mono text-[11px]">${r.employeeId}</span></td>
+            <td class="p-3">${r.leaveType}<br><span class="text-slate-400 text-[11px]">${r.startDate} s/d ${r.endDate}</span></td>
             <td class="p-3 text-right font-bold text-slate-800">${Number(r.totalDays).toFixed(1)}</td>
-            <td class="p-3 text-slate-600">${r.reason || '-'}</td>
-            <td class="p-3">${r.note ? `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">${r.note}</span>` : '-'}</td>
+            <td class="p-3 text-slate-600">${r.submittedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.submittedAt || ''}</span></td>
+            <td class="p-3 text-slate-600">${r.approvedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.approvedAt || ''}</span></td>
             <td class="p-3 text-center">
               <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
                 r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
@@ -553,8 +553,8 @@
           records = records.filter(r =>
             (r.employeeId || "").toLowerCase().includes(q) ||
             (r.employeeName || "").toLowerCase().includes(q) ||
-            (r.dayType || "").toLowerCase().includes(q) ||
-            (r.reason || "").toLowerCase().includes(q)
+            (r.submittedBy || "").toLowerCase().includes(q) ||
+            (r.approvedBy || "").toLowerCase().includes(q)
           );
         }
 
@@ -572,11 +572,11 @@
             <div class="text-lg font-bold text-slate-900 mt-1">${totalReq}</div>
           </div>
           <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 shadow-sm">
-            <span class="text-indigo-600 text-[10px] font-semibold uppercase">Total Jam Disetujui</span>
+            <span class="text-indigo-600 text-[10px] font-semibold uppercase">Jam Disetujui</span>
             <div class="text-lg font-bold text-indigo-900 mt-1">${totalHours.toFixed(1)} <span class="text-xs font-normal">Jam</span></div>
           </div>
           <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100 shadow-sm">
-            <span class="text-emerald-600 text-[10px] font-semibold uppercase">Lembur Hari Libur</span>
+            <span class="text-emerald-600 text-[10px] font-semibold uppercase">Lembur Libur</span>
             <div class="text-lg font-bold text-emerald-900 mt-1">${holidayCount} <span class="text-xs font-normal">Kasus</span></div>
           </div>
           <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100 shadow-sm">
@@ -589,31 +589,29 @@
           <tr>
             <th class="p-3 bg-slate-50">ID Lembur</th>
             <th class="p-3 bg-slate-50">Karyawan</th>
-            <th class="p-3 bg-slate-50">Tanggal</th>
-            <th class="p-3 bg-slate-50">Jam Kerja</th>
+            <th class="p-3 bg-slate-50">Tanggal & Jam</th>
             <th class="p-3 bg-slate-50 text-right">Durasi</th>
-            <th class="p-3 bg-slate-50">Tipe Hari</th>
-            <th class="p-3 bg-slate-50">Alasan</th>
+            <th class="p-3 bg-slate-50">Diajukan Oleh</th>
+            <th class="p-3 bg-slate-50">Disetujui Oleh</th>
             <th class="p-3 bg-slate-50 text-center">Status</th>
           </tr>
         `;
 
         if (records.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada catatan lembur yang cocok dengan filter.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada catatan lembur sesuai filter.</td></tr>';
           return;
         }
 
         tbody.innerHTML = records.map(r => {
           const duration = calculateOtHours(r.startTime, r.endTime);
           return `
-            <tr class="hover:bg-slate-50 transition">
+            <tr class="hover:bg-slate-50 transition text-xs">
               <td class="p-3 font-semibold text-slate-900">${r.overtimeId}</td>
-              <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400 font-mono text-[11px]">${r.employeeId} • ${r.rules}</span></td>
-              <td class="p-3 font-medium">${r.date}</td>
-              <td class="p-3">${r.startTime} - ${r.endTime}</td>
+              <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400 font-mono text-[11px]">${r.employeeId}</span></td>
+              <td class="p-3">${r.date}<br><span class="text-slate-400 text-[11px]">${r.startTime} - ${r.endTime} (${r.dayType})</span></td>
               <td class="p-3 text-right font-bold text-slate-800">${duration.toFixed(1)} Jam</td>
-              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-medium ${r.dayType && r.dayType.includes('Libur') ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'}">${r.dayType}</span></td>
-              <td class="p-3 text-slate-600">${r.reason || '-'}</td>
+              <td class="p-3 text-slate-600">${r.submittedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.submittedAt || ''}</span></td>
+              <td class="p-3 text-slate-600">${r.approvedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.approvedAt || ''}</span></td>
               <td class="p-3 text-center">
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
                   r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
@@ -625,7 +623,7 @@
       }
     }
 
-    // ── Export CSV ──
+    // ── CSV Export with Audit Trail Fields Included ──
     function exportCurrentReportCsv() {
       if (!currentFilteredReport || currentFilteredReport.length === 0) {
         return showAlert("error", "Tidak ada data laporan untuk diexport sesuai filter yang dipilih.");
@@ -635,21 +633,20 @@
       const nowStr = new Date().toISOString().slice(0, 10);
 
       if (activeReportTab === 'leave') {
-        csv = "Leave ID,Employee ID,Employee Name,Rules,Leave Type,Request Type,Start Date,End Date,Total Days,Reason,Note,Status,Submitted At\n";
+        csv = "Leave ID,Employee ID,Employee Name,Rules,Leave Type,Request Type,Start Date,End Date,Total Days,Reason,Note,Status,Submitted By,Submitted At,Approved By,Approved At\n";
         currentFilteredReport.forEach(r => {
-          csv += `"${r.leaveId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.leaveType}","${r.requestType}","${r.startDate}","${r.endDate}",${r.totalDays},"${(r.reason || '').replace(/"/g, '""')}","${(r.note || '').replace(/"/g, '""')}","${r.status}","${r.submittedAt}"\n`;
+          csv += `"${r.leaveId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.leaveType}","${r.requestType}","${r.startDate}","${r.endDate}",${r.totalDays},"${(r.reason || '').replace(/"/g, '""')}","${(r.note || '').replace(/"/g, '""')}","${r.status}","${r.submittedBy || ''}","${r.submittedAt || ''}","${r.approvedBy || ''}","${r.approvedAt || ''}"\n`;
         });
         triggerDownload(`Rekap_Cuti_${nowStr}.csv`, csv);
       } else {
-        csv = "Overtime ID,Employee ID,Employee Name,Rules,Date,Start Time,End Time,Duration Hours,Day Type,Reason,Status,Submitted At\n";
+        csv = "Overtime ID,Employee ID,Employee Name,Rules,Date,Start Time,End Time,Duration Hours,Day Type,Reason,Status,Submitted By,Submitted At,Approved By,Approved At\n";
         currentFilteredReport.forEach(r => {
           const duration = calculateOtHours(r.startTime, r.endTime);
-          csv += `"${r.overtimeId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.date}","${r.startTime}","${r.endTime}",${duration.toFixed(2)},"${r.dayType}","${(r.reason || '').replace(/"/g, '""')}","${r.status}","${r.submittedAt}"\n`;
+          csv += `"${r.overtimeId}","=""${r.employeeId}""","${r.employeeName}","${r.rules}","${r.date}","${r.startTime}","${r.endTime}",${duration.toFixed(2)},"${r.dayType}","${(r.reason || '').replace(/"/g, '""')}","${r.status}","${r.submittedBy || ''}","${r.submittedAt || ''}","${r.approvedBy || ''}","${r.approvedAt || ''}"\n`;
         });
         triggerDownload(`Rekap_Lembur_${nowStr}.csv`, csv);
       }
     }
-
     // ── Master Tables ──
     function renderEmpMasterTable() {
       const tbody = document.getElementById("empMasterTbody");

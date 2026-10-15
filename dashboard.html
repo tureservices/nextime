@@ -140,6 +140,10 @@
         <h3 class="font-bold text-slate-900 text-sm">Formulir Pengajuan Cuti</h3>
         <button onclick="closeModal('modalLeave')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
       </div>
+
+      <!-- In-Modal Alert for immediate feedback -->
+      <div id="leaveModalAlert" class="hidden mb-3 p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium"></div>
+
       <form onsubmit="submitLeave(event)" class="space-y-3 text-xs">
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Cari Karyawan (Ketik Nama / ID)</label>
@@ -150,7 +154,7 @@
         </div>
         <div class="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-lg border">
           <div><span class="text-slate-500">Jabatan:</span> <strong id="lblEmpRules">-</strong></div>
-          <div><span class="text-slate-500">Sisa Cuti Tahunan:</span> <strong id="lblEmpBalance">-</strong></div>
+          <div><span class="text-slate-500">Sisa Cuti:</span> <strong id="lblEmpBalance">-</strong></div>
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Tipe Cuti</label>
@@ -202,6 +206,9 @@
         <h3 class="font-bold text-slate-900 text-sm">Formulir Pengajuan Lembur</h3>
         <button onclick="closeModal('modalOvertime')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
       </div>
+
+      <div id="otModalAlert" class="hidden mb-3 p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium"></div>
+
       <form onsubmit="submitOvertime(event)" class="space-y-3 text-xs">
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Cari Karyawan (Ketik Nama / ID)</label>
@@ -263,13 +270,16 @@
     let appData = { employees: [], policies: [], leaveRequests: [], overtimeRecords: [] };
 
     async function callApi(payload) {
+      console.log("[NexTime] Calling API with action:", payload.action);
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload),
         redirect: "follow"
       });
-      return await res.json();
+      const data = await res.json();
+      console.log("[NexTime] Received response:", data);
+      return data;
     }
 
     function showDashAlert(type, msg) {
@@ -303,7 +313,10 @@
     function openModal(id) { 
       document.getElementById(id).classList.remove("hidden"); 
       document.getElementById(id).classList.add("flex"); 
-      if (appData.employees.length === 0) loadDashboardData();
+      if (appData.employees.length === 0) {
+        console.log("[NexTime] Modal opened but employees array is empty. Fetching data...");
+        loadDashboardData();
+      }
     }
     function closeModal(id) { 
       document.getElementById(id).classList.add("hidden"); 
@@ -312,28 +325,45 @@
 
     // Load Data
     async function loadDashboardData() {
+      console.log("[NexTime] Initializing loadDashboardData()...");
       try {
         const res = await callApi({ action: "getDashboardData", email: currentUser.email, role: currentUser.role });
         if (res.status === "success") {
           appData = res;
+          console.log(`[NexTime] Successfully loaded ${appData.employees.length} employees and ${appData.policies.length} policies.`);
           populateDropdowns(appData.employees);
           renderPendingTable();
           renderHistoryTables();
         } else {
-          showDashAlert("error", "Error dari server: " + res.message);
+          console.error("[NexTime] Server returned error:", res.message);
+          showDashAlert("error", "Error server: " + res.message);
+          showModalAlert(res.message);
         }
       } catch (err) {
-        showDashAlert("error", "Gagal memuat data. Pastikan Apps Script telah di-deploy 'New version': " + err.message);
+        console.error("[NexTime] Network/Parse Error:", err);
+        showDashAlert("error", "Koneksi ke Apps Script gagal: " + err.message);
+        showModalAlert(err.message);
       }
+    }
+
+    function showModalAlert(msg) {
+      ["leaveModalAlert", "otModalAlert"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.textContent = "Gagal memuat karyawan dari Google Sheets: " + msg;
+          el.classList.remove("hidden");
+        }
+      });
     }
 
     // Batch Dropdown Population
     function populateDropdowns(empList) {
+      console.log(`[NexTime] Populating dropdown with ${empList.length} employees...`);
       const leaveEmpSelect = document.getElementById("leaveEmpSelect");
       const otEmpSelect = document.getElementById("otEmpSelect");
       const policySelect = document.getElementById("leaveTypeSelect");
 
-      let empOptions = '<option value="">-- Pilih Karyawan (' + empList.length + ') --</option>';
+      let empOptions = `<option value="">-- Pilih Karyawan (${empList.length}) --</option>`;
       empList.forEach(emp => {
         empOptions += `<option value="${emp.id}">${emp.id} - ${emp.name} (${emp.rules})</option>`;
       });
@@ -350,7 +380,6 @@
       }
     }
 
-    // Live Search Filter for 151 Employees
     function filterEmployeeDropdown(prefix) {
       const query = document.getElementById(`${prefix}EmpSearch`).value.toLowerCase();
       const filtered = appData.employees.filter(e => 
@@ -401,7 +430,6 @@
       }
     }
 
-    // Render Tables
     function renderPendingTable() {
       const tbody = document.getElementById("pendingTableBody");
       const canApprove = (currentUser.role === "Admin" || currentUser.role === "Supervisor");
@@ -487,7 +515,6 @@
       `).join("");
     }
 
-    // Submit Handlers
     async function submitLeave(e) {
       e.preventDefault();
       const empId = document.getElementById("leaveEmpSelect").value;
@@ -563,7 +590,6 @@
       }
     }
 
-    // Process Approval & WhatsApp Dispatcher
     async function processApproval(type, recordId, decision) {
       if (!confirm(`Konfirmasi: Ubah status menjadi ${decision}?`)) return;
 

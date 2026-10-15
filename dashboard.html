@@ -457,7 +457,17 @@
     if (["admin", "administrator"].includes(String(currentUser.role || "").trim().toLowerCase())) {
       document.getElementById("btnAdminPortal")?.classList.remove("hidden");
     }
+    // Kontrol Hak Akses: Sembunyikan tombol jika user tidak diizinkan membuat pengajuan
+    const canLeave = currentUser.allowLeave === true || String(currentUser.allowLeave).toLowerCase() === "true";
+    if (!canLeave) {
+      document.querySelector("button[onclick=\"openModal('modalLeave')\"]")?.classList.add("hidden");
+    }
 
+    const canOvertime = currentUser.allowOvertime === true || String(currentUser.allowOvertime).toLowerCase() === "true";
+    if (!canOvertime) {
+      document.querySelector("button[onclick=\"openModal('modalOvertime')\"]")?.classList.add("hidden");
+    }
+    // >>> AKHIR PENEMPATAN KODE // Kontrol Hak Akses: Sembunyikan tombol jika user tidak diizinkan membuat pengajuan <<<
     const MONTHS_INDO = [
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"

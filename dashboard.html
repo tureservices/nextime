@@ -859,30 +859,44 @@
       }
     }
 
-    function triggerWhatsAppDispatch(data) {
-      let msg = "";
-      if (data.type === "leave") {
-        if (data.decision === "Disetujui") {
-          msg = `Halo ${data.name}, pengajuan CUTI Anda telah DISETUJUI.\n\nDetail Cuti:\n- Tipe Cuti: ${data.leaveType}\n- Jenis Pengajuan: ${data.requestType}\n- Tanggal: ${data.startDate} s/d ${data.endDate}\n- Total Hari: ${data.totalDays} Hari\n- Alasan: ${data.reason}`;
-          if (data.note) msg += `\nCatatan: ${data.note}`;
-          if (data.deduction > 0) msg += `\nJumlah Potong AL: ${data.deduction} Hari`;
-        } else {
-          msg = `Halo ${data.name}, pengajuan CUTI Anda telah *DITOLAK*.\n\nDetail Cuti:\n- Tipe Cuti: ${data.leaveType}\n- Jenis Pengajuan: ${data.requestType}\n- Tanggal: ${data.startDate} s/d ${data.endDate}\n- Total Hari: ${data.totalDays} Hari\n- Alasan: ${data.reason}`;
-        }
-      } else if (data.type === "overtime") {
-        if (data.decision === "Disetujui") {
-          msg = `Halo ${data.name}, pengajuan LEMBUR Anda telah DISETUJUI.\n\nDetail Lembur:\n- Tanggal: ${data.date}\n- Tipe Hari: ${data.dayType}\n- Jam Kerja: ${data.startTime} - ${data.endTime}\n- Alasan: ${data.reason}`;
-        } else {
-          msg = `Halo ${data.name}, mohon maaf pengajuan LEMBUR Anda telah DITOLAK.\n\nDetail Lembur:\n- Tanggal: ${data.date}\n- Tipe Hari: ${data.dayType}\n- Jam Kerja: ${data.startTime} - ${data.endTime}\n- Alasan: ${data.reason}`;
-        }
-      }
+function formatTimeClean(val) {
+  if (!val) return "";
+  const str = String(val).trim();
+  if (str.includes("T")) {
+    // If it's an ISO timestamp like 1899-12-30T17:00:00.000Z
+    const timePart = str.split("T")[1];
+    return timePart.substring(0, 5); // returns "17:00"
+  }
+  return str.length > 5 && str.includes(":") ? str.substring(0, 5) : str;
+}
 
-      const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const domain = isMobile ? "https://api.whatsapp.com/send?phone=" : "https://web.whatsapp.com/send?phone=";
-      const targetUrl = `${domain}${data.phone}&text=${encodeURIComponent(msg)}`;
-
-      window.open(targetUrl, "_blank");
+function triggerWhatsAppDispatch(data) {
+  let msg = "";
+  if (data.type === "leave") {
+    if (data.decision === "Disetujui") {
+      msg = `Halo ${data.name}, pengajuan CUTI Anda telah DISETUJUI.\n\nDetail Cuti:\n- Tipe Cuti: ${data.leaveType}\n- Jenis Pengajuan: ${data.requestType}\n- Tanggal: ${data.startDate} s/d ${data.endDate}\n- Total Hari: ${data.totalDays} Hari\n- Alasan: ${data.reason}`;
+      if (data.note) msg += `\nCatatan: ${data.note}`;
+      if (data.deduction > 0) msg += `\nJumlah Potong AL: ${data.deduction} Hari`;
+    } else {
+      msg = `Halo ${data.name}, pengajuan CUTI Anda telah *DITOLAK*.\n\nDetail Cuti:\n- Tipe Cuti: ${data.leaveType}\n- Jenis Pengajuan: ${data.requestType}\n- Tanggal: ${data.startDate} s/d ${data.endDate}\n- Total Hari: ${data.totalDays} Hari\n- Alasan: ${data.reason}`;
     }
+  } else if (data.type === "overtime") {
+    const sTime = formatTimeClean(data.startTime);
+    const eTime = formatTimeClean(data.endTime);
+
+    if (data.decision === "Disetujui") {
+      msg = `Halo ${data.name}, pengajuan LEMBUR Anda telah DISETUJUI.\n\nDetail Lembur:\n- Tanggal: ${data.date}\n- Tipe Hari: ${data.dayType}\n- Jam Kerja: ${sTime} - ${eTime}\n- Alasan: ${data.reason}`;
+    } else {
+      msg = `Halo ${data.name}, mohon maaf pengajuan LEMBUR Anda telah DITOLAK.\n\nDetail Lembur:\n- Tanggal: ${data.date}\n- Tipe Hari: ${data.dayType}\n- Jam Kerja: ${sTime} - ${eTime}\n- Alasan: ${data.reason}`;
+    }
+  }
+
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const domain = isMobile ? "https://api.whatsapp.com/send?phone=" : "https://web.whatsapp.com/send?phone=";
+  const targetUrl = `${domain}${data.phone}&text=${encodeURIComponent(msg)}`;
+
+  window.open(targetUrl, "_blank");
+}
 
     // Initialize Dashboard
     loadDashboardData();

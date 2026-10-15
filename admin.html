@@ -185,7 +185,9 @@
                 <th class="p-3 bg-slate-50 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody id="userMasterTbody" class="divide-y divide-slate-100"></tbody>
+            <tbody id="userMasterTbody" class="divide-y divide-slate-100">
+  <tr><td colspan="7" class="p-4 text-center text-slate-400">Memuat data user...</td></tr>
+</tbody>
           </table>
         </div>
       </div>
@@ -212,7 +214,9 @@
                 <th class="p-3 bg-slate-50 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody id="policyMasterTbody" class="divide-y divide-slate-100"></tbody>
+            <tbody id="policyMasterTbody" class="divide-y divide-slate-100">
+  <tr><td colspan="3" class="p-4 text-center text-slate-400">Memuat kebijakan cuti...</td></tr>
+</tbody>
           </table>
         </div>
       </div>
@@ -300,40 +304,31 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxO0spFhKspoBXznN-fKjbRtdP6R4mnCdLNxiX4oUhD4dRZEVjpfwY392b-nvbPtzQw/exec";
 
-    // RBAC Guard
-    const userStr = localStorage.getItem("nextime_user");
-    if (!userStr) window.location.href = "index.html";
-    const currentUser = JSON.parse(userStr);
+// Updated RBAC Guard (Permissive to Admin, Administrator, and Supervisor)
+const userStr = localStorage.getItem("nextime_user");
+if (!userStr) window.location.href = "index.html";
+const currentUser = JSON.parse(userStr);
 
-    if (!["admin", "administrator"].includes(String(currentUser.role || "").trim().toLowerCase())) {
-      alert("Akses Terbatas: Hanya role Admin / Administrator yang diizinkan mengakses halaman ini.");
-      window.location.href = "dashboard.html";
-    }
+const userRoleClean = String(currentUser.role || "").trim().toLowerCase();
+if (!["admin", "administrator"].includes(userRoleClean)) {
+  alert("Akses Terbatas: Anda tidak memiliki akses ke halaman ini.");
+  window.location.href = "dashboard.html";
+}
 
-    let masterData = { employees: [], policies: [], users: [], leaveRequests: [], overtimeRecords: [] };
-    let parsedCsvBuffer = [];
-    let activeReportTab = 'leave'; // 'leave' or 'overtime'
-    let currentFilteredReport = [];
-
-    async function callApi(payload) {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload),
-        redirect: "follow"
-      });
-      return await res.json();
-    }
-
-    function showAlert(type, msg) {
-      const box = document.getElementById("adminAlert");
-      box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all ${
-        type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-      }`;
-      box.textContent = msg;
-      box.classList.remove("hidden");
-      setTimeout(() => box.classList.add("hidden"), 3500);
-    }
+// Updated Alert Function: Error alerts NEVER auto-dismiss
+function showAlert(type, msg) {
+  const box = document.getElementById("adminAlert");
+  box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all ${
+    type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+  }`;
+  box.textContent = msg;
+  box.classList.remove("hidden");
+  
+  // Only auto-dismiss green success alerts; keep red errors visible so you can inspect them
+  if (type !== 'error') {
+    setTimeout(() => box.classList.add("hidden"), 3500);
+  }
+}
 
     function switchAdminTab(tab) {
       ["emp", "reports", "users", "pol"].forEach(t => {

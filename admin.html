@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexTime - Administration & Master Data</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 bg-slate-900 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow">
+          ⚙️
+        </div>
+        <div>
+          <span class="font-bold text-base text-slate-900 tracking-tight">NexTime Admin Portal</span>
+          <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">Master Data</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <a href="dashboard.html" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">
+          ← Kembali ke Dashboard
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div id="adminAlert" class="hidden mb-4 p-3 rounded-lg text-xs font-medium transition-all"></div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex space-x-2 border-b border-slate-200 pb-3 mb-6">
+      <button id="btnTabEmp" onclick="switchAdminTab('emp')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition">
+        Karyawan & Saldo Cuti
+      </button>
+      <button id="btnTabUsers" onclick="switchAdminTab('users')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
+        Manajemen User Akun
+      </button>
+      <button id="btnTabPol" onclick="switchAdminTab('pol')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
+        Kebijakan Cuti
+      </button>
+    </div>
+
+    <!-- TAB 1: KARYAWAN & SALDO CUTI -->
+    <section id="panelEmp" class="space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
+          <div>
+            <h2 class="font-bold text-sm text-slate-900">Sinkronisasi & Top Up Saldo Karyawan</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Tambah karyawan baru, perbarui nomor telepon, atau perbarui sisa saldo cuti via CSV.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="downloadEmployeeTemplate()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300">
+              📥 Unduh Template CSV
+            </button>
+            <button onclick="exportCurrentEmployees()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300">
+              📊 Export Data Saat Ini
+            </button>
+            <label class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer shadow">
+              📤 Upload CSV Karyawan
+              <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
+            </label>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-3">
+          <input type="text" id="filterEmp" oninput="renderEmpMasterTable()" placeholder="Cari Employee ID, Nama..." class="w-72 px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <span id="empCountBadge" class="text-xs text-slate-400 font-medium">0 Karyawan</span>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-100 rounded-lg">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+              <tr>
+                <th class="p-3">Employee ID</th>
+                <th class="p-3">Nama Karyawan</th>
+                <th class="p-3">Rules / Posisi</th>
+                <th class="p-3">WhatsApp / No HP</th>
+                <th class="p-3 text-right">Saldo Cuti Aktif</th>
+              </tr>
+            </thead>
+            <tbody id="empMasterTbody" class="divide-y divide-slate-100">
+              <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MANAJEMEN USER -->
+    <section id="panelUsers" class="hidden space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
+          <div>
+            <h2 class="font-bold text-sm text-slate-900">Daftar Akun Pengguna NexTime</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Atur hak akses persetujuan, modul cuti, dan modul lembur.</p>
+          </div>
+          <button onclick="openUserModal()" class="bg-slate-900 hover:bg-black text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow">
+            + Tambah User
+          </button>
+        </div>
+        <div class="overflow-x-auto border border-slate-100 rounded-lg">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+              <tr>
+                <th class="p-3">Email Pengguna</th>
+                <th class="p-3">Nama Lengkap</th>
+                <th class="p-3">Role</th>
+                <th class="p-3 text-center">Akses Cuti</th>
+                <th class="p-3 text-center">Akses Lembur</th>
+                <th class="p-3 text-center">Status Password</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="userMasterTbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: KEBIJAKAN CUTI -->
+    <section id="panelPol" class="hidden space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
+          <div>
+            <h2 class="font-bold text-sm text-slate-900">Leave Policies & Additional Leaves</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Tipe cuti khusus dengan hak cuti berbayar tanpa memotong saldo tahunan.</p>
+          </div>
+          <button onclick="openPolicyModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow">
+            + Tambah Kebijakan
+          </button>
+        </div>
+        <div class="overflow-x-auto border border-slate-100 rounded-lg">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+              <tr>
+                <th class="p-3">Tipe Cuti</th>
+                <th class="p-3 text-right">Jatah Cuti (Allowed Days)</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="policyMasterTbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: CSV PREVIEW / DIFF BEFORE COMMIT -->
+  <div id="modalCsvPreview" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div>
+          <h3 class="font-bold text-sm text-slate-900">Validasi & Preview Data CSV</h3>
+          <p class="text-xs text-slate-400 mt-0.5" id="csvSummaryText">Memeriksa perubahan...</p>
+        </div>
+        <button onclick="closeModal('modalCsvPreview')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+      <div class="p-6 overflow-y-auto">
+        <table class="w-full text-left text-xs border border-slate-200 rounded-lg">
+          <thead class="bg-slate-100 text-slate-600 font-semibold">
+            <tr>
+              <th class="p-2.5">Aksi</th>
+              <th class="p-2.5">Employee ID</th>
+              <th class="p-2.5">Nama Karyawan</th>
+              <th class="p-2.5">Posisi</th>
+              <th class="p-2.5">No WhatsApp</th>
+              <th class="p-2.5 text-right">Saldo Baru</th>
+            </tr>
+          </thead>
+          <tbody id="csvPreviewTbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end space-x-2 bg-slate-50">
+        <button onclick="closeModal('modalCsvPreview')" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-xs font-semibold">
+          Batalkan
+        </button>
+        <button id="btnCommitCsv" onclick="commitCsvImport()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow">
+          Konfirmasi & Simpan ke Database
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: USER FORM -->
+  <div id="modalUserForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+      <h3 class="font-bold text-sm text-slate-900 mb-4" id="userFormTitle">Kelola User</h3>
+      <form id="formUserActual" onsubmit="submitUserForm(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Email Karyawan</label>
+          <input type="email" id="uEmail" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+          <input type="text" id="uName" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Role Persetujuan</label>
+          <select id="uRole" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white">
+            <option value="Basic">Basic (Staff Standard)</option>
+            <option value="Supervisor">Supervisor</option>
+            <option value="HR">HR</option>
+            <option value="Factory Manager">Factory Manager</option>
+            <option value="Sample Manager">Sample Manager</option>
+            <option value="Admin">Admin / Administrator</option>
+          </select>
+        </div>
+        <div class="space-y-2 pt-2">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="uAllowLeave" class="w-4 h-4 text-blue-600 rounded">
+            <span class="text-slate-700 font-medium">Boleh Mengajukan Cuti (Allow Leave)</span>
+          </label>
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="uAllowOt" class="w-4 h-4 text-blue-600 rounded">
+            <span class="text-slate-700 font-medium">Boleh Mengajukan Lembur (Allow Overtime)</span>
+          </label>
+        </div>
+        <div class="flex justify-end space-x-2 pt-4">
+          <button type="button" onclick="closeModal('modalUserForm')" class="px-3.5 py-2 border border-slate-200 text-slate-600 rounded-lg font-semibold">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold shadow">Simpan User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxO0spFhKspoBXznN-fKjbRtdP6R4mnCdLNxiX4oUhD4dRZEVjpfwY392b-nvbPtzQw/exec";
+
+    // RBAC Guard
+    const userStr = localStorage.getItem("nextime_user");
+    if (!userStr) window.location.href = "index.html";
+    const currentUser = JSON.parse(userStr);
+
+    if (!["admin", "administrator"].includes(String(currentUser.role || "").trim().toLowerCase())) {
+      alert("Akses Terbatas: Hanya role Admin / Administrator yang diizinkan mengakses halaman ini.");
+      window.location.href = "dashboard.html";
+    }
+
+    let masterData = { employees: [], policies: [], users: [] };
+    let parsedCsvBuffer = [];
+
+    async function callApi(payload) {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
+        redirect: "follow"
+      });
+      return await res.json();
+    }
+
+    function showAlert(type, msg) {
+      const box = document.getElementById("adminAlert");
+      box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all ${
+        type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+      }`;
+      box.textContent = msg;
+      box.classList.remove("hidden");
+      setTimeout(() => box.classList.add("hidden"), 3500);
+    }
+
+    function switchAdminTab(tab) {
+      ["emp", "users", "pol"].forEach(t => {
+        document.getElementById(`panel${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.toggle("hidden", t !== tab);
+        const btn = document.getElementById(`btnTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (t === tab) {
+          btn.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition";
+        } else {
+          btn.className = "px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200 transition";
+        }
+      });
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove("hidden");
+      document.getElementById(id).classList.add("flex");
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add("hidden");
+      document.getElementById(id).classList.remove("flex");
+    }
+
+    // ── Load All Master Data ──
+    async function loadMasterData() {
+      try {
+        const res = await callApi({ action: "adminGetMasterData", email: currentUser.email, role: currentUser.role });
+        if (res.status === "success") {
+          masterData = res;
+          renderEmpMasterTable();
+          renderUserMasterTable();
+          renderPolicyMasterTable();
+        } else {
+          showAlert("error", res.message);
+        }
+      } catch (err) {
+        showAlert("error", "Koneksi gagal: " + err.message);
+      }
+    }
+
+    // ── Render Employees ──
+    function renderEmpMasterTable() {
+      const tbody = document.getElementById("empMasterTbody");
+      const q = (document.getElementById("filterEmp")?.value || "").toLowerCase();
+      let list = masterData.employees;
+      if (q) {
+        list = list.filter(e => e.id.toLowerCase().includes(q) || e.name.toLowerCase().includes(q));
+      }
+      document.getElementById("empCountBadge").textContent = `${list.length} Karyawan`;
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Tidak ada data ditemukan.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(e => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 font-semibold text-slate-900">${e.id}</td>
+          <td class="p-3 font-medium text-slate-800">${e.name}</td>
+          <td class="p-3 text-slate-500">${e.rules}</td>
+          <td class="p-3 text-slate-600 font-mono">${e.phone || '-'}</td>
+          <td class="p-3 text-right font-bold text-slate-900">${Number(e.leaveBalance).toFixed(2)} Hari</td>
+        </tr>
+      `).join("");
+    }
+
+    // ── Render Users ──
+    function renderUserMasterTable() {
+      const tbody = document.getElementById("userMasterTbody");
+      tbody.innerHTML = masterData.users.map(u => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 font-semibold text-slate-900">${u.email}</td>
+          <td class="p-3 font-medium text-slate-800">${u.fullName}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">${u.role}</span></td>
+          <td class="p-3 text-center">${u.allowLeave ? '✅' : '❌'}</td>
+          <td class="p-3 text-center">${u.allowOvertime ? '✅' : '❌'}</td>
+          <td class="p-3 text-center">${u.hasPassword ? '<span class="text-emerald-600 font-semibold text-[10px]">Aktif</span>' : '<span class="text-amber-600 text-[10px]">Belum Aktivasi</span>'}</td>
+          <td class="p-3 text-right">
+            <button onclick="editUser('${u.email}')" class="text-blue-600 hover:underline font-semibold">Edit</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    // ── Render Policies ──
+    function renderPolicyMasterTable() {
+      const tbody = document.getElementById("policyMasterTbody");
+      tbody.innerHTML = masterData.policies.map(p => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 font-medium text-slate-800">${p.type}</td>
+          <td class="p-3 text-right font-bold text-slate-900">${p.allowedDays} Hari</td>
+          <td class="p-3 text-right">
+            <button onclick="promptEditPolicy('${p.type}', ${p.allowedDays})" class="text-blue-600 hover:underline font-semibold">Ubah Hari</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    // ── CSV Helpers: Export, Template & Parser ──
+    function downloadEmployeeTemplate() {
+      const csvHeader = "Employee ID,Employee Name,Rules,Phone,Leave Balance\n";
+      const sampleRow = "F999,SAMPLE EMPLOYEE,Tailor,6289606318020,12.0\n";
+      triggerDownload("Template_Karyawan_NexTime.csv", csvHeader + sampleRow);
+    }
+
+    function exportCurrentEmployees() {
+      let csv = "Employee ID,Employee Name,Rules,Phone,Leave Balance\n";
+      masterData.employees.forEach(e => {
+        csv += `"${e.id}","${e.name}","${e.rules}","${e.phone}",${e.leaveBalance}\n`;
+      });
+      triggerDownload(`Export_Karyawan_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    }
+
+    function triggerDownload(filename, content) {
+      const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        parseAndPreviewCsv(evt.target.result);
+      };
+      reader.readAsText(file);
+      e.target.value = ""; // Reset
+    }
+
+    function parseAndPreviewCsv(text) {
+      const lines = text.split(/\r\n|\n/).filter(line => line.trim().length > 0);
+      if (lines.length < 2) return alert("File CSV kosong atau tidak memiliki data.");
+
+      const rows = [];
+      // Clean split handling quotes
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(",").map(c => c.replace(/^["']|["']$/g, '').trim());
+        if (cols[0]) {
+          rows.push({
+            id: cols[0],
+            name: cols[1] || "",
+            rules: cols[2] || "",
+            phone: cols[3] || "",
+            leaveBalance: cols[4] || "0"
+          });
+        }
+      }
+
+      parsedCsvBuffer = rows;
+
+      // Render Diff Preview
+      const tbody = document.getElementById("csvPreviewTbody");
+      let updateCount = 0;
+      let newCount = 0;
+
+      tbody.innerHTML = rows.map(r => {
+        const existing = masterData.employees.find(e => e.id.toUpperCase() === r.id.toUpperCase());
+        const isUpdate = Boolean(existing);
+        if (isUpdate) updateCount++; else newCount++;
+
+        return `
+          <tr class="border-b border-slate-100 ${isUpdate ? 'bg-amber-50/40' : 'bg-emerald-50/40'}">
+            <td class="p-2.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isUpdate ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                ${isUpdate ? 'UPDATE / TOP-UP' : 'KARYAWAN BARU'}
+              </span>
+            </td>
+            <td class="p-2.5 font-semibold text-slate-900">${r.id}</td>
+            <td class="p-2.5">${r.name || (existing ? existing.name : '-')}</td>
+            <td class="p-2.5">${r.rules || (existing ? existing.rules : '-')}</td>
+            <td class="p-2.5 font-mono">${r.phone || (existing ? existing.phone + ' (tetap)' : '-')}</td>
+            <td class="p-2.5 text-right font-bold text-slate-900">
+              ${isUpdate ? `<span class="text-slate-400 line-through mr-1">${existing.leaveBalance}</span>` : ''}
+              ${Number(r.leaveBalance).toFixed(2)} Hari
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("csvSummaryText").textContent = `Terdeteksi: ${updateCount} diperbarui / top up saldo, ${newCount} karyawan baru.`;
+      openModal("modalCsvPreview");
+    }
+
+    async function commitCsvImport() {
+      const btn = document.getElementById("btnCommitCsv");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan ke Google Sheets...";
+
+      try {
+        const res = await callApi({
+          action: "adminBulkUpsertEmployees",
+          rows: parsedCsvBuffer,
+          email: currentUser.email,
+          role: currentUser.role
+        });
+
+        if (res.status === "success") {
+          closeModal("modalCsvPreview");
+          showAlert("success", res.message);
+          loadMasterData();
+        } else {
+          alert("Gagal: " + res.message);
+        }
+      } catch (err) {
+        alert("Koneksi gagal: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Konfirmasi & Simpan ke Database";
+      }
+    }
+
+    // ── User Management Handlers ──
+    function openUserModal() {
+      document.getElementById("formUserActual").reset();
+      document.getElementById("uEmail").readOnly = false;
+      document.getElementById("userFormTitle").textContent = "Tambah Akun User";
+      openModal("modalUserForm");
+    }
+
+    function editUser(email) {
+      const u = masterData.users.find(x => x.email === email);
+      if (!u) return;
+      document.getElementById("uEmail").value = u.email;
+      document.getElementById("uEmail").readOnly = true;
+      document.getElementById("uName").value = u.fullName;
+      document.getElementById("uRole").value = u.role;
+      document.getElementById("uAllowLeave").checked = u.allowLeave;
+      document.getElementById("uAllowOt").checked = u.allowOvertime;
+      document.getElementById("userFormTitle").textContent = "Edit Hak Akses User";
+      openModal("modalUserForm");
+    }
+
+    async function submitUserForm(e) {
+      e.preventDefault();
+      const payload = {
+        email: document.getElementById("uEmail").value,
+        fullName: document.getElementById("uName").value,
+        role: document.getElementById("uRole").value,
+        allowLeave: document.getElementById("uAllowLeave").checked,
+        allowOvertime: document.getElementById("uAllowOt").checked
+      };
+
+      const res = await callApi({ action: "adminSaveUser", userData: payload, email: currentUser.email, role: currentUser.role });
+      if (res.status === "success") {
+        closeModal("modalUserForm");
+        showAlert("success", res.message);
+        loadMasterData();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    async function promptEditPolicy(type, currentDays) {
+      const days = prompt(`Masukkan jumlah kuota hari untuk '${type}':`, currentDays);
+      if (days === null) return;
+      const num = parseInt(days, 10);
+      if (isNaN(num) || num < 0) return alert("Angka hari tidak valid.");
+
+      const res = await callApi({ action: "adminSavePolicy", policyData: { type: type, allowedDays: num }, email: currentUser.email, role: currentUser.role });
+      if (res.status === "success") {
+        showAlert("success", res.message);
+        loadMasterData();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    loadMasterData();
+  </script>
+</body>
+</html>

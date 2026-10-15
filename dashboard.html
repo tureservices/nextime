@@ -862,12 +862,22 @@
 function formatTimeClean(val) {
   if (!val) return "";
   const str = String(val).trim();
+
+  // If received as an ISO string (e.g. 1899-12-30T17:00:00.000Z)
   if (str.includes("T")) {
-    // If it's an ISO timestamp like 1899-12-30T17:00:00.000Z
-    const timePart = str.split("T")[1];
-    return timePart.substring(0, 5); // returns "17:00"
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      // Use standard hours and minutes
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+    // Fallback if Date parsing fails
+    return str.split("T")[1].substring(0, 5);
   }
-  return str.length > 5 && str.includes(":") ? str.substring(0, 5) : str;
+
+  // If already standard HH:mm or HH:mm:ss
+  return (str.length > 5 && str.includes(":")) ? str.substring(0, 5) : str;
 }
 
 function triggerWhatsAppDispatch(data) {

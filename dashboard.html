@@ -631,7 +631,7 @@
       });
     });
 
-    // ── Real-Time Total Days, Unpaid Deficit & Deduction Engine ──
+    // ── Real-Time Total Days & Deduction Engine (Sesuai 5 Aturan Cuti) ──
     function onDateOrTypeChange() {
       const reqType = document.getElementById("leaveReqType").value;
       const start = document.getElementById("leaveStart").value;
@@ -660,31 +660,37 @@
       }
       totalDaysInput.value = totalDays.toFixed(2);
 
+      // Kalkulasi potongan hak cuti tahunan
       let neededAL = 0.00;
       const policy = appData.policies.find(p => p.type === selectedType);
       const allowed = policy ? policy.allowedDays : 0;
+      const lower = (selectedType || "").toLowerCase();
+      const isSickOrMcu = lower.includes("sakit") || lower.includes("mcu") || lower.includes("medical checkup");
+      const hasDoctorCert = lower.includes("surat") || lower.includes("dc") || lower.includes("dokter");
 
-      if (allowed > 0) {
-        neededAL = Math.max(0, totalDays - allowed);
-      } else {
-        const lower = (selectedType || "").toLowerCase();
-        if (lower.includes("sakit") && lower.includes("dengan surat dokter")) {
-          neededAL = 0.00;
-        } else if (lower.includes("medical checkup") && lower.includes("dengan surat dokter")) {
-          neededAL = 0.00;
-        } else {
-          neededAL = totalDays;
-        }
+      // 1. Sakit / MCU dengan surat dokter (DC) -> tidak memotong cuti tahunan sama sekali
+      if (isSickOrMcu && hasDoctorCert) {
+        neededAL = 0.00;
       }
+      // 3 & 4. Cuti khusus (Melahirkan, Keguguran, Menikah, dll) memotong jatah kebijakan dulu
+      else if (allowed > 0) {
+        neededAL = Math.max(0, totalDays - allowed);
+      }
+      // 2 & 5. Sakit/MCU tanpa DC, Cuti Tahunan, dan cuti lainnya potong langsung
+      else {
+        neededAL = totalDays;
+      }
+
       deductionInput.value = neededAL.toFixed(1);
 
+      // Evaluasi apakah saldo cuti akan menjadi minus (hutang cuti)
       const noteContainer = document.getElementById("payrollNoteContainer");
       const noteInput = document.getElementById("leavePayrollNote");
 
       if (selectedType && neededAL > empBalance) {
-        const unpaidDays = neededAL - empBalance;
-        const unpaidDisplay = unpaidDays % 1 === 0 ? unpaidDays : unpaidDays.toFixed(1);
-        noteInput.value = `Unpaid Leave: ${unpaidDisplay} Hari`;
+        const deficitDays = neededAL - empBalance;
+        const deficitDisplay = deficitDays % 1 === 0 ? deficitDays : deficitDays.toFixed(1);
+        noteInput.value = `Defisit Saldo: ${deficitDisplay} Hari (Saldo Menjadi Minus)`;
         noteContainer.classList.remove("hidden");
       } else {
         noteInput.value = "";
@@ -924,7 +930,7 @@
       }
     }
 
-    // ── Render Tab 4: Saldo Cuti Karyawan ──
+    // ── Render Tab 4: Saldo Cuti Karyawan (Dukungan Saldo Minus) ──
     function renderBalanceTable() {
       const tbody = document.getElementById("balanceTableBody");
       const query = (document.getElementById("searchBalance")?.value || "").toLowerCase();
@@ -946,7 +952,10 @@
       tbody.innerHTML = list.map(e => {
         const balance = Number(e.leaveBalance) || 0;
         let statusBadge = "";
-        if (balance <= 0) {
+        
+        if (balance < 0) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-200 text-rose-900 border border-rose-300">Minus (Hutang Cuti)</span>';
+        } else if (balance === 0) {
           statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Habis</span>';
         } else if (balance <= 3) {
           statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Hampir Habis</span>';
@@ -954,12 +963,16 @@
           statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Tersedia</span>';
         }
 
+        const balanceFormatted = balance < 0
+          ? `<span class="text-rose-600 font-bold">${balance.toFixed(2)} Hari</span>`
+          : `${balance.toFixed(2)} Hari`;
+
         return `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3 font-semibold text-slate-900">${e.id}</td>
             <td class="p-3 font-medium text-slate-800">${e.name}</td>
             <td class="p-3 text-slate-500">${e.rules}</td>
-            <td class="p-3 text-right font-bold text-slate-900">${balance.toFixed(2)} Hari</td>
+            <td class="p-3 text-right font-bold text-slate-900">${balanceFormatted}</td>
             <td class="p-3 text-center">${statusBadge}</td>
           </tr>
         `;

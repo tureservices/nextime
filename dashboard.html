@@ -461,12 +461,12 @@
         // Kontrol Hak Akses: Sembunyikan tombol jika user tidak diizinkan membuat pengajuan
     const canLeave = currentUser.allowLeave === true || String(currentUser.allowLeave).toLowerCase() === "true";
     if (!canLeave) {
-      document.querySelector("button[onclick=\"('modalLeave')\"]")?.classList.add("hidden");
+      document.querySelector("button[onclick=\"openModal('modalLeave')\"]")?.classList.add("hidden");
     }
 
     const canOvertime = currentUser.allowOvertime === true || String(currentUser.allowOvertime).toLowerCase() === "true";
     if (!canOvertime) {
-      document.querySelector("button[onclick=\"('modalOvertime')\"]")?.classList.add("hidden");
+      document.querySelector("button[onclick=\"openModal('modalOvertime')\"]")?.classList.add("hidden");
     }
     // >>> AKHIR PENEMPATAN KODE // Kontrol Hak Akses: Sembunyikan tombol jika user tidak diizinkan membuat pengajuan <<<
     
@@ -1005,7 +1005,7 @@ function openModal(id) {
       }).join("");
     }
 
-    // ── Submit Handlers ──
+// ── Submit Handlers ──
 async function submitLeave(e) {
   e.preventDefault();
   const empId = document.getElementById("leaveEmpIdSelected").value;
@@ -1014,20 +1014,14 @@ async function submitLeave(e) {
   const start = document.getElementById("leaveStart").value;
   const end = document.getElementById("leaveEnd").value;
   const today = getLocalIsoDate();
-  const roleClean = String(currentUser.role || "").trim().toLowerCase();
-  const isPrivileged = ["admin", "administrator", "hr"].includes(roleClean);
+
+  // Strict check: No past dates and no inverted ranges for anyone
+  if (start < today) {
+    return showDashAlert("error", "Tanggal mulai cuti tidak boleh tanggal lampau.");
+  }
 
   if (end < start) {
     return showDashAlert("error", "Tanggal selesai tidak boleh lebih awal dari tanggal mulai.");
-  }
-
-  if (!isPrivileged && start < today) {
-    const leaveType = document.getElementById("leaveTypeSelect").value.toLowerCase();
-    const isEmergency = leaveType.includes("sakit") || leaveType.includes("mcu");
-    
-    if (!isEmergency) {
-      return showDashAlert("error", "Pengajuan cuti terencana tidak boleh bertanggal lampau.");
-    }
   }
 
   const emp = appData.employees.find(e => e.id === empId);
@@ -1062,13 +1056,21 @@ async function submitOvertime(e) {
   const empId = document.getElementById("otEmpIdSelected").value;
   if (!empId) return alert("Pilih Employee ID terlebih dahulu.");
 
+  const otDate = document.getElementById("otDate").value;
+  const today = getLocalIsoDate();
+
+  // Strict check: Block empty or past dates
+  if (!otDate || otDate < today) {
+    return showDashAlert("error", "Tanggal lembur tidak boleh tanggal lampau.");
+  }
+
   const emp = appData.employees.find(e => e.id === empId);
   const payload = {
     employeeId: empId,
     employeeName: emp.name,
     rules: emp.rules,
     payrollPeriod: document.getElementById("otPayrollPeriod").value,
-    date: document.getElementById("otDate").value,
+    date: otDate,
     dayType: document.getElementById("otDayType").value,
     startTime: document.getElementById("otStart").value,
     endTime: document.getElementById("otEnd").value,

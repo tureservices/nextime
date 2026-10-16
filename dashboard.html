@@ -461,12 +461,12 @@
         // Kontrol Hak Akses: Sembunyikan tombol jika user tidak diizinkan membuat pengajuan
     const canLeave = currentUser.allowLeave === true || String(currentUser.allowLeave).toLowerCase() === "true";
     if (!canLeave) {
-      document.querySelector("button[onclick=\"openModal('modalLeave')\"]")?.classList.add("hidden");
+      document.querySelector("button[onclick=\"('modalLeave')\"]")?.classList.add("hidden");
     }
 
     const canOvertime = currentUser.allowOvertime === true || String(currentUser.allowOvertime).toLowerCase() === "true";
     if (!canOvertime) {
-      document.querySelector("button[onclick=\"openModal('modalOvertime')\"]")?.classList.add("hidden");
+      document.querySelector("button[onclick=\"('modalOvertime')\"]")?.classList.add("hidden");
     }
     // >>> AKHIR PENEMPATAN KODE // Kontrol Hak Akses: Sembunyikan tombol jika user tidak diizinkan membuat pengajuan <<<
     
@@ -549,17 +549,19 @@ function openModal(id) {
   document.getElementById(id).classList.remove("hidden"); 
   document.getElementById(id).classList.add("flex"); 
   
+  const today = getLocalIsoDate();
+
   if (id === "modalLeave") {
-    const today = getLocalIsoDate();
     const startInput = document.getElementById("leaveStart");
     const endInput = document.getElementById("leaveEnd");
-
-    // Lock date picker for all users (including Admin and HR)
     startInput.setAttribute("min", today);
     endInput.setAttribute("min", today);
   }
 
   if (id === "modalOvertime") {
+    // Lock overtime date to prevent picking dates before today
+    document.getElementById("otDate").setAttribute("min", today);
+
     const currentMonth = MONTHS_INDO[new Date().getMonth()];
     const select = document.getElementById("otPayrollPeriod");
     if (select && !select.value) {

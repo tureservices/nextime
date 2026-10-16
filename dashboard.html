@@ -545,20 +545,38 @@
       });
     }
 
-    function openModal(id) { 
-      document.getElementById(id).classList.remove("hidden"); 
-      document.getElementById(id).classList.add("flex"); 
-      
-      if (id === "modalOvertime") {
-        const currentMonth = MONTHS_INDO[new Date().getMonth()];
-        const select = document.getElementById("otPayrollPeriod");
-        if (select && !select.value) {
-          select.value = currentMonth;
-        }
-      }
+function openModal(id) { 
+  document.getElementById(id).classList.remove("hidden"); 
+  document.getElementById(id).classList.add("flex"); 
+  
+  const today = getLocalIsoDate();
+  const roleClean = String(currentUser.role || "").trim().toLowerCase();
+  const isPrivileged = ["admin", "administrator", "hr"].includes(roleClean);
 
-      if (appData.employees.length === 0) loadDashboardData();
+  if (id === "modalLeave") {
+    const startInput = document.getElementById("leaveStart");
+    const endInput = document.getElementById("leaveEnd");
+
+    // Standard staff cannot select dates prior to today
+    if (!isPrivileged) {
+      startInput.setAttribute("min", today);
+      endInput.setAttribute("min", today);
+    } else {
+      startInput.removeAttribute("min");
+      endInput.removeAttribute("min");
     }
+  }
+
+  if (id === "modalOvertime") {
+    const currentMonth = MONTHS_INDO[new Date().getMonth()];
+    const select = document.getElementById("otPayrollPeriod");
+    if (select && !select.value) {
+      select.value = currentMonth;
+    }
+  }
+
+  if (appData.employees.length === 0) loadDashboardData();
+}
 
     function closeModal(id) { 
       document.getElementById(id).classList.add("hidden"); 
@@ -643,71 +661,74 @@
     });
 
     // ── Real-Time Total Days & Deduction Engine (Sesuai 5 Aturan Cuti) ──
-    function onDateOrTypeChange() {
-      const reqType = document.getElementById("leaveReqType").value;
-      const start = document.getElementById("leaveStart").value;
-      let end = document.getElementById("leaveEnd").value;
-      const totalDaysInput = document.getElementById("leaveTotalDays");
-      const deductionInput = document.getElementById("leaveDeductionDisplay");
-      const selectedType = document.getElementById("leaveTypeSelect").value;
-      const empBalStr = document.getElementById("leaveEmpBalance").value;
-      const empBalance = parseFloat(empBalStr) || 0.00;
+ function onDateOrTypeChange() {
+  const reqType = document.getElementById("leaveReqType").value;
+  const start = document.getElementById("leaveStart").value;
+  let end = document.getElementById("leaveEnd").value;
+  const totalDaysInput = document.getElementById("leaveTotalDays");
+  const deductionInput = document.getElementById("leaveDeductionDisplay");
+  const selectedType = document.getElementById("leaveTypeSelect").value;
+  const empBalStr = document.getElementById("leaveEmpBalance").value;
+  const empBalance = parseFloat(empBalStr) || 0.00;
 
-      let totalDays = 0.00;
-
-      if (reqType.startsWith("Half day")) {
-        if (start) {
-          document.getElementById("leaveEnd").value = start;
-          end = start;
-        }
-        totalDays = 0.50;
-      } else {
-        if (start && end) {
-          const d1 = new Date(start);
-          const d2 = new Date(end);
-          const diffDays = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-          totalDays = diffDays > 0 ? diffDays : 0.00;
-        }
-      }
-      totalDaysInput.value = totalDays.toFixed(2);
-
-      // Kalkulasi potongan hak cuti tahunan
-      let neededAL = 0.00;
-      const policy = appData.policies.find(p => p.type === selectedType);
-      const allowed = policy ? policy.allowedDays : 0;
-      const lower = (selectedType || "").toLowerCase();
-      const isSickOrMcu = lower.includes("sakit") || lower.includes("mcu") || lower.includes("medical checkup");
-      const hasDoctorCert = lower.includes("surat") || lower.includes("dc") || lower.includes("dokter");
-
-      // 1. Sakit / MCU dengan surat dokter (DC) -> tidak memotong cuti tahunan sama sekali
-      if (isSickOrMcu && hasDoctorCert) {
-        neededAL = 0.00;
-      }
-      // 3 & 4. Cuti khusus (Melahirkan, Keguguran, Menikah, dll) memotong jatah kebijakan dulu
-      else if (allowed > 0) {
-        neededAL = Math.max(0, totalDays - allowed);
-      }
-      // 2 & 5. Sakit/MCU tanpa DC, Cuti Tahunan, dan cuti lainnya potong langsung
-      else {
-        neededAL = totalDays;
-      }
-
-      deductionInput.value = neededAL.toFixed(1);
-
-      // Evaluasi apakah saldo cuti akan menjadi minus (hutang cuti)
-      const noteContainer = document.getElementById("payrollNoteContainer");
-      const noteInput = document.getElementById("leavePayrollNote");
-
-      if (selectedType && neededAL > empBalance) {
-        const deficitDays = neededAL - empBalance;
-        const deficitDisplay = deficitDays % 1 === 0 ? deficitDays : deficitDays.toFixed(1);
-        noteInput.value = `Defisit Saldo: ${deficitDisplay} Hari (Saldo Menjadi Minus)`;
-        noteContainer.classList.remove("hidden");
-      } else {
-        noteInput.value = "";
-        noteContainer.classList.add("hidden");
-      }
+  // Dynamically lock endDate to be on or after startDate
+  if (start) {
+    document.getElementById("leaveEnd").setAttribute("min", start);
+    if (end && end < start) {
+      document.getElementById("leaveEnd").value = start;
+      end = start;
     }
+  }
+
+  let totalDays = 0.00;
+
+  if (reqType.startsWith("Half day")) {
+    if (start) {
+      document.getElementById("leaveEnd").value = start;
+      end = start;
+    }
+    totalDays = 0.50;
+  } else {
+    if (start && end) {
+      const d1 = new Date(start);
+      const d2 = new Date(end);
+      const diffDays = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+      totalDays = diffDays > 0 ? diffDays : 0.00;
+    }
+  }
+  totalDaysInput.value = totalDays.toFixed(2);
+
+  // Kalkulasi potongan hak cuti tahunan
+  let neededAL = 0.00;
+  const policy = appData.policies.find(p => p.type === selectedType);
+  const allowed = policy ? policy.allowedDays : 0;
+  const lower = (selectedType || "").toLowerCase();
+  const isSickOrMcu = lower.includes("sakit") || lower.includes("mcu") || lower.includes("medical checkup");
+  const hasDoctorCert = lower.includes("surat") || lower.includes("dc") || lower.includes("dokter");
+
+  if (isSickOrMcu && hasDoctorCert) {
+    neededAL = 0.00;
+  } else if (allowed > 0) {
+    neededAL = Math.max(0, totalDays - allowed);
+  } else {
+    neededAL = totalDays;
+  }
+
+  deductionInput.value = neededAL.toFixed(1);
+
+  const noteContainer = document.getElementById("payrollNoteContainer");
+  const noteInput = document.getElementById("leavePayrollNote");
+
+  if (selectedType && neededAL > empBalance) {
+    const deficitDays = neededAL - empBalance;
+    const deficitDisplay = deficitDays % 1 === 0 ? deficitDays : deficitDays.toFixed(1);
+    noteInput.value = `Defisit Saldo: ${deficitDisplay} Hari (Saldo Menjadi Minus)`;
+    noteContainer.classList.remove("hidden");
+  } else {
+    noteInput.value = "";
+    noteContainer.classList.add("hidden");
+  }
+}
 
     // ── Live Daily Activity Widget (Today's Cuti & Lembur) ──
     function renderDailyWidgets() {
@@ -996,6 +1017,25 @@ async function submitLeave(e) {
   const empId = document.getElementById("leaveEmpIdSelected").value;
   if (!empId) return alert("Pilih Employee ID terlebih dahulu.");
 
+  const start = document.getElementById("leaveStart").value;
+  const end = document.getElementById("leaveEnd").value;
+  const today = getLocalIsoDate();
+  const roleClean = String(currentUser.role || "").trim().toLowerCase();
+  const isPrivileged = ["admin", "administrator", "hr"].includes(roleClean);
+
+  if (end < start) {
+    return showDashAlert("error", "Tanggal selesai tidak boleh lebih awal dari tanggal mulai.");
+  }
+
+  if (!isPrivileged && start < today) {
+    const leaveType = document.getElementById("leaveTypeSelect").value.toLowerCase();
+    const isEmergency = leaveType.includes("sakit") || leaveType.includes("mcu");
+    
+    if (!isEmergency) {
+      return showDashAlert("error", "Pengajuan cuti terencana tidak boleh bertanggal lampau.");
+    }
+  }
+
   const emp = appData.employees.find(e => e.id === empId);
   const payrollNote = document.getElementById("leavePayrollNote").value;
 
@@ -1006,8 +1046,8 @@ async function submitLeave(e) {
     leaveBalance: emp.leaveBalance,
     leaveType: document.getElementById("leaveTypeSelect").value,
     requestType: document.getElementById("leaveReqType").value,
-    startDate: document.getElementById("leaveStart").value,
-    endDate: document.getElementById("leaveEnd").value,
+    startDate: start,
+    endDate: end,
     totalDays: document.getElementById("leaveTotalDays").value,
     reason: document.getElementById("leaveReason").value,
     note: payrollNote || ""

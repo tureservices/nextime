@@ -549,22 +549,14 @@ function openModal(id) {
   document.getElementById(id).classList.remove("hidden"); 
   document.getElementById(id).classList.add("flex"); 
   
-  const today = getLocalIsoDate();
-  const roleClean = String(currentUser.role || "").trim().toLowerCase();
-  const isPrivileged = ["admin", "administrator", "hr"].includes(roleClean);
-
   if (id === "modalLeave") {
+    const today = getLocalIsoDate();
     const startInput = document.getElementById("leaveStart");
     const endInput = document.getElementById("leaveEnd");
 
-    // Standard staff cannot select dates prior to today
-    if (!isPrivileged) {
-      startInput.setAttribute("min", today);
-      endInput.setAttribute("min", today);
-    } else {
-      startInput.removeAttribute("min");
-      endInput.removeAttribute("min");
-    }
+    // Lock date picker for all users (including Admin and HR)
+    startInput.setAttribute("min", today);
+    endInput.setAttribute("min", today);
   }
 
   if (id === "modalOvertime") {

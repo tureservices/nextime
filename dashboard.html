@@ -161,6 +161,7 @@
                 <th class="p-3">Total Hari</th>
                 <th class="p-3">Catatan / Unpaid</th>
                 <th class="p-3">Status</th>
+                <th class="p-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody id="leaveTableBody" class="divide-y divide-slate-100"></tbody>
@@ -189,6 +190,7 @@
                 <th class="p-3">Jam Kerja</th>
                 <th class="p-3">Tipe Hari</th>
                 <th class="p-3">Status</th>
+                <th class="p-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody id="overtimeTableBody" class="divide-y divide-slate-100"></tbody>
@@ -889,36 +891,54 @@ function openModal(id) {
       tbody.innerHTML = html;
     }
 
-    // ── Render Tabs 2 & 3: Riwayat Cuti & Riwayat Lembur ──
+// ── Render Tabs 2 & 3: Riwayat Cuti & Riwayat Lembur ──
     function renderHistoryTables() {
+      const isApprover = isAuthorizedApprover(currentUser.role);
+      const userEmail = String(currentUser.email || "").toLowerCase();
+
       const lQuery = (document.getElementById("searchLeave")?.value || "").toLowerCase();
       let leaves = appData.leaveRequests;
       if (lQuery) {
         leaves = leaves.filter(r => 
           r.employeeId.toLowerCase().includes(lQuery) || 
           r.employeeName.toLowerCase().includes(lQuery) || 
-          r.leaveType.toLowerCase().includes(lQuery) ||
+          r.leaveType.toLowerCase().includes(lQuery) || 
           r.status.toLowerCase().includes(lQuery)
         );
       }
 
       const lBody = document.getElementById("leaveTableBody");
       if (leaves.length === 0) {
-        lBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada riwayat cuti yang cocok.</td></tr>';
+        lBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada riwayat cuti yang cocok.</td></tr>';
       } else {
-        lBody.innerHTML = leaves.map(r => `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
-            <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
-            <td class="p-3">${r.leaveType}</td>
-            <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
-            <td class="p-3">${r.totalDays} Hari</td>
-            <td class="p-3">${r.note ? `<span class="text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${r.note}</span>` : '-'}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-              r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
-            }">${r.status}</span></td>
-          </tr>
-        `).join("");
+        lBody.innerHTML = leaves.map(r => {
+          const isSubmitter = String(r.submittedBy || "").toLowerCase() === userEmail;
+          const canCancel = (r.status === "Pending" && (isSubmitter || isApprover)) ||
+                            (r.status === "Disetujui" && isApprover);
+
+          const statusBadge = r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' :
+                             (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' :
+                             (r.status === 'Dibatalkan' ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-800'));
+
+          return `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
+              <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
+              <td class="p-3">${r.leaveType}</td>
+              <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
+              <td class="p-3">${r.totalDays} Hari</td>
+              <td class="p-3">${r.note ? `<span class="text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${r.note}</span>` : '-'}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusBadge}">${r.status}</span></td>
+              <td class="p-3 text-right">
+                ${canCancel ? `
+                  <button onclick="requestCancelConfirmation('leave', '${r.leaveId}', '${r.employeeName}', '${r.status}')" class="text-rose-600 hover:text-rose-800 font-semibold text-[11px] bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded border border-rose-200 transition">
+                    Batalkan
+                  </button>
+                ` : '<span class="text-slate-300">-</span>'}
+              </td>
+            </tr>
+          `;
+        }).join("");
       }
 
       const otQuery = (document.getElementById("searchOvertime")?.value || "").toLowerCase();
@@ -927,29 +947,44 @@ function openModal(id) {
         overtimes = overtimes.filter(r => 
           r.employeeId.toLowerCase().includes(otQuery) || 
           r.employeeName.toLowerCase().includes(otQuery) || 
-          r.dayType.toLowerCase().includes(otQuery) ||
-          (r.payrollPeriod || "").toLowerCase().includes(otQuery) ||
+          r.dayType.toLowerCase().includes(otQuery) || 
+          (r.payrollPeriod || "").toLowerCase().includes(otQuery) || 
           r.status.toLowerCase().includes(otQuery)
         );
       }
 
       const otBody = document.getElementById("overtimeTableBody");
       if (overtimes.length === 0) {
-        otBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada riwayat lembur yang cocok.</td></tr>';
+        otBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada riwayat lembur yang cocok.</td></tr>';
       } else {
-        otBody.innerHTML = overtimes.map(r => `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
-            <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
-            <td class="p-3 font-semibold text-slate-800"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">${r.payrollPeriod || '-'}</span></td>
-            <td class="p-3">${r.date}</td>
-            <td class="p-3">${r.startTime} - ${r.endTime}</td>
-            <td class="p-3">${r.dayType}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-              r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' : (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')
-            }">${r.status}</span></td>
-          </tr>
-        `).join("");
+        otBody.innerHTML = overtimes.map(r => {
+          const isSubmitter = String(r.submittedBy || "").toLowerCase() === userEmail;
+          const canCancel = (r.status === "Pending" && (isSubmitter || isApprover)) ||
+                            (r.status === "Disetujui" && isApprover);
+
+          const statusBadge = r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' :
+                             (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' :
+                             (r.status === 'Dibatalkan' ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-800'));
+
+          return `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
+              <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
+              <td class="p-3 font-semibold text-slate-800"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">${r.payrollPeriod || '-'}</span></td>
+              <td class="p-3">${r.date}</td>
+              <td class="p-3">${r.startTime} s/d ${r.endTime}</td>
+              <td class="p-3">${r.dayType}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusBadge}">${r.status}</span></td>
+              <td class="p-3 text-right">
+                ${canCancel ? `
+                  <button onclick="requestCancelConfirmation('overtime', '${r.overtimeId}', '${r.employeeName}', '${r.status}')" class="text-rose-600 hover:text-rose-800 font-semibold text-[11px] bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded border border-rose-200 transition">
+                    Batalkan
+                  </button>
+                ` : '<span class="text-slate-300">-</span>'}
+              </td>
+            </tr>
+          `;
+        }).join("");
       }
     }
 
@@ -1079,30 +1114,44 @@ async function submitOvertime(e) {
     // ── Approval Confirmation Dialog ──
     let pendingApprovalAction = null;
 
-    function requestApprovalConfirmation(type, recordId, decision, employeeName, employeeId) {
+function requestCancelConfirmation(type, recordId, employeeName, status) {
       const modal = document.getElementById("modalConfirm");
       const title = document.getElementById("confirmTitle");
       const desc = document.getElementById("confirmDesc");
       const iconBox = document.getElementById("confirmIconBox");
       const btnAction = document.getElementById("btnConfirmAction");
 
-      const isApprove = decision === "Disetujui";
-      title.textContent = isApprove ? "Konfirmasi Persetujuan" : "Konfirmasi Penolakan";
-      desc.innerHTML = `Ubah status pengajuan ${type === 'leave' ? 'cuti' : 'lembur'} untuk <strong>${employeeName}</strong> (${employeeId}) menjadi <strong>${decision}</strong>?`;
+      title.textContent = "Konfirmasi Pembatalan";
+      const isApprovedLeave = type === "leave" && status === "Disetujui";
 
-      if (isApprove) {
-        iconBox.className = "w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-blue-100 text-blue-600";
-        iconBox.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-        btnAction.className = "w-1/2 py-2 rounded-lg text-xs font-semibold text-white shadow bg-blue-600 hover:bg-blue-700 transition";
-        btnAction.textContent = "Ya, Setujui";
-      } else {
-        iconBox.className = "w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-rose-100 text-rose-600";
-        iconBox.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-        btnAction.className = "w-1/2 py-2 rounded-lg text-xs font-semibold text-white shadow bg-rose-600 hover:bg-rose-700 transition";
-        btnAction.textContent = "Ya, Tolak";
-      }
+      desc.innerHTML = `Batalkan pengajuan ${type === 'leave' ? 'cuti' : 'lembur'} (<strong>${recordId}</strong>) untuk <strong>${employeeName}</strong>?` +
+        (isApprovedLeave ? `<br><span class="text-emerald-700 font-semibold mt-1 inline-block">ℹ️ Saldo cuti yang telah dipotong akan otomatis dikembalikan ke kuota karyawan.</span>` : '');
 
-      pendingApprovalAction = () => executeApproval(type, recordId, decision);
+      iconBox.className = "w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-rose-100 text-rose-600";
+      iconBox.innerHTML = '<span class="text-xl">⚠️</span>';
+      btnAction.className = "w-1/2 py-2 rounded-lg text-xs font-semibold text-white shadow bg-rose-600 hover:bg-rose-700 transition";
+      btnAction.textContent = "Ya, Batalkan";
+
+      pendingApprovalAction = async () => {
+        try {
+          const res = await callApi({
+            action: "cancelRequest",
+            type: type,
+            id: recordId,
+            email: currentUser.email,
+            role: currentUser.role
+          });
+
+          if (res.status === "success") {
+            showDashAlert("success", res.message);
+            loadDashboardData();
+          } else {
+            showDashAlert("error", res.message);
+          }
+        } catch (err) {
+          showDashAlert("error", "Gagal membatalkan: " + err.message);
+        }
+      };
 
       modal.classList.remove("hidden");
       modal.classList.add("flex");

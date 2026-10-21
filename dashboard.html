@@ -548,19 +548,16 @@
 function openModal(id) { 
   document.getElementById(id).classList.remove("hidden"); 
   document.getElementById(id).classList.add("flex"); 
-  
-  const today = getLocalIsoDate();
 
   if (id === "modalLeave") {
-    const startInput = document.getElementById("leaveStart");
-    const endInput = document.getElementById("leaveEnd");
-    startInput.setAttribute("min", today);
-    endInput.setAttribute("min", today);
+    // Unlock past dates for leave
+    document.getElementById("leaveStart").removeAttribute("min");
+    document.getElementById("leaveEnd").removeAttribute("min");
   }
 
   if (id === "modalOvertime") {
-    // Lock overtime date to prevent picking dates before today
-    document.getElementById("otDate").setAttribute("min", today);
+    // Unlock past dates for overtime
+    document.getElementById("otDate").removeAttribute("min");
 
     const currentMonth = MONTHS_INDO[new Date().getMonth()];
     const select = document.getElementById("otPayrollPeriod");
@@ -1013,12 +1010,6 @@ async function submitLeave(e) {
 
   const start = document.getElementById("leaveStart").value;
   const end = document.getElementById("leaveEnd").value;
-  const today = getLocalIsoDate();
-
-  // Strict check: No past dates and no inverted ranges for anyone
-  if (start < today) {
-    return showDashAlert("error", "Tanggal mulai cuti tidak boleh tanggal lampau.");
-  }
 
   if (end < start) {
     return showDashAlert("error", "Tanggal selesai tidak boleh lebih awal dari tanggal mulai.");
@@ -1057,11 +1048,9 @@ async function submitOvertime(e) {
   if (!empId) return alert("Pilih Employee ID terlebih dahulu.");
 
   const otDate = document.getElementById("otDate").value;
-  const today = getLocalIsoDate();
 
-  // Strict check: Block empty or past dates
-  if (!otDate || otDate < today) {
-    return showDashAlert("error", "Tanggal lembur tidak boleh tanggal lampau.");
+  if (!otDate) {
+    return showDashAlert("error", "Tanggal lembur wajib diisi.");
   }
 
   const emp = appData.employees.find(e => e.id === empId);

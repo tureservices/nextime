@@ -101,7 +101,7 @@
     <!-- Alert Box -->
     <div id="dashAlert" class="hidden mb-4 p-3 rounded-lg text-xs font-medium transition-all duration-300"></div>
 
-<!-- Tab 1: Persetujuan Tertunda -->
+    <!-- Tab 1: Persetujuan Tertunda (Frozen Header) -->
     <div id="viewPending" class="space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -125,29 +125,28 @@
           </div>
         </div>
         
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+        <!-- Freeze Table Wrapper -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border-b border-slate-200">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                <th class="p-3">Tipe</th>
-                <!-- Clickable Sort: Employee ID -->
-                <th class="p-3 cursor-pointer select-none hover:text-blue-600 transition" onclick="togglePendingSort('id')">
+                <th class="p-3 bg-slate-50">Tipe</th>
+                <th class="p-3 bg-slate-50 cursor-pointer select-none hover:text-blue-600 transition" onclick="togglePendingSort('id')">
                   <div class="inline-flex items-center gap-1">
                     <span>Employee ID</span>
                     <span id="sortIconPendingId" class="text-[10px] text-slate-400">↕</span>
                   </div>
                 </th>
-                <!-- Clickable Sort: Nama Karyawan -->
-                <th class="p-3 cursor-pointer select-none hover:text-blue-600 transition" onclick="togglePendingSort('name')">
+                <th class="p-3 bg-slate-50 cursor-pointer select-none hover:text-blue-600 transition" onclick="togglePendingSort('name')">
                   <div class="inline-flex items-center gap-1">
                     <span>Nama Karyawan</span>
                     <span id="sortIconPendingName" class="text-[10px] text-slate-400">↕</span>
                   </div>
                 </th>
-                <th class="p-3">Detail</th>
-                <th class="p-3">Tanggal / Waktu</th>
-                <th class="p-3">Alasan / Catatan</th>
-                <th class="p-3 text-right">Aksi</th>
+                <th class="p-3 bg-slate-50">Detail</th>
+                <th class="p-3 bg-slate-50">Tanggal / Waktu</th>
+                <th class="p-3 bg-slate-50">Alasan / Catatan</th>
+                <th class="p-3 bg-slate-50 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody id="pendingTableBody" class="divide-y divide-slate-100">
@@ -158,7 +157,7 @@
       </div>
     </div>
 
-    <!-- Tab 2: Riwayat Cuti -->
+    <!-- Tab 2: Riwayat Cuti (Frozen Header) -->
     <div id="viewLeave" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -167,18 +166,20 @@
             <input type="text" id="searchLeave" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Jenis Cuti..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+        
+        <!-- Freeze Table Wrapper -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border-b border-slate-200">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                <th class="p-3">Employee ID</th>
-                <th class="p-3">Nama Karyawan</th>
-                <th class="p-3">Jenis Cuti</th>
-                <th class="p-3">Periode</th>
-                <th class="p-3">Total Hari</th>
-                <th class="p-3">Catatan / Unpaid</th>
-                <th class="p-3">Status</th>
-                <th class="p-3 text-right">Aksi</th>
+                <th class="p-3 bg-slate-50">Employee ID</th>
+                <th class="p-3 bg-slate-50">Nama Karyawan</th>
+                <th class="p-3 bg-slate-50">Jenis Cuti</th>
+                <th class="p-3 bg-slate-50">Periode</th>
+                <th class="p-3 bg-slate-50">Total Hari</th>
+                <th class="p-3 bg-slate-50">Catatan / Unpaid</th>
+                <th class="p-3 bg-slate-50">Status</th>
+                <th class="p-3 bg-slate-50 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody id="leaveTableBody" class="divide-y divide-slate-100"></tbody>
@@ -187,7 +188,7 @@
       </div>
     </div>
 
-    <!-- Tab 3: Riwayat Lembur -->
+    <!-- Tab 3: Riwayat Lembur (Frozen Header) -->
     <div id="viewOvertime" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -196,18 +197,20 @@
             <input type="text" id="searchOvertime" oninput="renderHistoryTables()" placeholder="Cari Employee ID, Nama, Periode..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+        
+        <!-- Freeze Table Wrapper -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border-b border-slate-200">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                <th class="p-3">Employee ID</th>
-                <th class="p-3">Nama Karyawan</th>
-                <th class="p-3">Periode Payroll</th>
-                <th class="p-3">Tanggal</th>
-                <th class="p-3">Jam Kerja</th>
-                <th class="p-3">Tipe Hari</th>
-                <th class="p-3">Status</th>
-                <th class="p-3 text-right">Aksi</th>
+                <th class="p-3 bg-slate-50">Employee ID</th>
+                <th class="p-3 bg-slate-50">Nama Karyawan</th>
+                <th class="p-3 bg-slate-50">Periode Payroll</th>
+                <th class="p-3 bg-slate-50">Tanggal</th>
+                <th class="p-3 bg-slate-50">Jam Kerja</th>
+                <th class="p-3 bg-slate-50">Tipe Hari</th>
+                <th class="p-3 bg-slate-50">Status</th>
+                <th class="p-3 bg-slate-50 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody id="overtimeTableBody" class="divide-y divide-slate-100"></tbody>
@@ -216,7 +219,7 @@
       </div>
     </div>
 
-    <!-- Tab 4: Saldo Cuti Karyawan -->
+    <!-- Tab 4: Saldo Cuti Karyawan (Frozen Header) -->
     <div id="viewBalance" class="hidden space-y-4">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -228,15 +231,17 @@
             <input type="text" id="searchBalance" oninput="renderBalanceTable()" placeholder="Cari Employee ID, Nama, Posisi..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+        
+        <!-- Freeze Table Wrapper -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border-b border-slate-200">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                <th class="p-3">Employee ID</th>
-                <th class="p-3">Nama Karyawan</th>
-                <th class="p-3">Rules / Posisi</th>
-                <th class="p-3 text-right">Sisa Saldo Cuti</th>
-                <th class="p-3 text-center">Status Kuota</th>
+                <th class="p-3 bg-slate-50">Employee ID</th>
+                <th class="p-3 bg-slate-50">Nama Karyawan</th>
+                <th class="p-3 bg-slate-50">Rules / Posisi</th>
+                <th class="p-3 bg-slate-50 text-right">Sisa Saldo Cuti</th>
+                <th class="p-3 bg-slate-50 text-center">Status Kuota</th>
               </tr>
             </thead>
             <tbody id="balanceTableBody" class="divide-y divide-slate-100">
@@ -563,6 +568,7 @@
       });
     }
 
+    // ── Open Modals in Fresh "Create" State ──
     function openCreateModal(type) {
       if (type === 'leave') {
         document.getElementById("leaveEditId").value = "";
@@ -607,6 +613,7 @@
       document.getElementById(id).classList.remove("flex"); 
     }
 
+    // ── Open Modals in Pre-Filled "Edit" State ──
     function openEditLeave(recordId) {
       const r = appData.leaveRequests.find(x => x.leaveId === recordId);
       if (!r) return showDashAlert("error", "Data pengajuan tidak ditemukan.");
@@ -737,7 +744,7 @@
       });
     });
 
-// ── Real-Time Total Days & Deduction Engine (Past Dates Fully Unlocked) ──
+    // ── Total Days & Deduction Engine (Past Dates Fully Unlocked) ──
     function onDateOrTypeChange() {
       const reqType = document.getElementById("leaveReqType").value;
       const start = document.getElementById("leaveStart").value;
@@ -748,7 +755,7 @@
       const empBalStr = document.getElementById("leaveEmpBalance").value;
       const empBalance = parseFloat(empBalStr) || 0.00;
 
-      // Ensure min attribute is completely removed so past dates are never blocked
+      // Allow past dates without restriction
       document.getElementById("leaveEnd").removeAttribute("min");
       document.getElementById("leaveStart").removeAttribute("min");
 
@@ -889,6 +896,44 @@
       }
     }
 
+    // ── Sorting State for Tab 1 ──
+    let pendingSortField = ""; 
+    let pendingSortDirection = "asc"; 
+
+    function togglePendingSort(field) {
+      if (pendingSortField === field) {
+        pendingSortDirection = pendingSortDirection === "asc" ? "desc" : "asc";
+      } else {
+        pendingSortField = field;
+        pendingSortDirection = "asc";
+      }
+      
+      const dropdown = document.getElementById("sortPendingSelect");
+      if (dropdown) dropdown.value = `${pendingSortField}_${pendingSortDirection}`;
+      
+      renderPendingTable();
+    }
+
+    function applyPendingSortFromDropdown(val) {
+      if (!val) {
+        pendingSortField = "";
+        pendingSortDirection = "asc";
+      } else {
+        const parts = val.split("_");
+        pendingSortField = parts[0];
+        pendingSortDirection = parts[1];
+      }
+      renderPendingTable();
+    }
+
+    function updateSortIcons() {
+      const idIcon = document.getElementById("sortIconPendingId");
+      const nameIcon = document.getElementById("sortIconPendingName");
+
+      if (idIcon) idIcon.textContent = pendingSortField === "id" ? (pendingSortDirection === "asc" ? "▲" : "▼") : "↕";
+      if (nameIcon) nameIcon.textContent = pendingSortField === "name" ? (pendingSortDirection === "asc" ? "▲" : "▼") : "↕";
+    }
+
     // ── Render Tab 1: Persetujuan Tertunda with Sorting & Edit ──
     function renderPendingTable() {
       updateSortIcons();
@@ -897,13 +942,11 @@
       const userEmail = String(currentUser.email || "").toLowerCase();
       const query = (document.getElementById("searchPending")?.value || "").toLowerCase();
 
-      // 1. Gather all pending items
       let list = [
         ...appData.leaveRequests.filter(r => r.status === "Pending").map(r => ({ ...r, _recordKind: "leave" })),
         ...appData.overtimeRecords.filter(r => r.status === "Pending").map(r => ({ ...r, _recordKind: "overtime" }))
       ];
 
-      // 2. Filter search query
       if (query) {
         list = list.filter(r => {
           if (r._recordKind === "leave") {
@@ -930,7 +973,6 @@
         return;
       }
 
-      // 3. Sort by Employee ID or Nama Karyawan (Alphanumeric natural order)
       if (pendingSortField === "id") {
         list.sort((a, b) => {
           const res = a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true, sensitivity: "base" });
@@ -943,7 +985,6 @@
         });
       }
 
-      // 4. Render rows
       let html = "";
       list.forEach(r => {
         const isSubmitter = String(r.submittedBy || "").toLowerCase() === userEmail;
@@ -1165,7 +1206,7 @@
       }).join("");
     }
 
-    // ── Submit Handlers (Create & Update) ──
+    // ── Submit Handlers ──
     async function submitLeave(e) {
       e.preventDefault();
       const empId = document.getElementById("leaveEmpIdSelected").value;
@@ -1379,45 +1420,6 @@
       return (str.length > 5 && str.includes(":")) ? str.substring(0, 5) : str;
     }
 
-    // ── Table Sorting State for Menunggu Persetujuan ──
-    let pendingSortField = ""; // "id" or "name"
-    let pendingSortDirection = "asc"; // "asc" or "desc"
-
-    function togglePendingSort(field) {
-      if (pendingSortField === field) {
-        pendingSortDirection = pendingSortDirection === "asc" ? "desc" : "asc";
-      } else {
-        pendingSortField = field;
-        pendingSortDirection = "asc";
-      }
-      
-      // Sync dropdown value
-      const dropdown = document.getElementById("sortPendingSelect");
-      if (dropdown) dropdown.value = `${pendingSortField}_${pendingSortDirection}`;
-      
-      renderPendingTable();
-    }
-
-    function applyPendingSortFromDropdown(val) {
-      if (!val) {
-        pendingSortField = "";
-        pendingSortDirection = "asc";
-      } else {
-        const parts = val.split("_");
-        pendingSortField = parts[0];
-        pendingSortDirection = parts[1];
-      }
-      renderPendingTable();
-    }
-
-    function updateSortIcons() {
-      const idIcon = document.getElementById("sortIconPendingId");
-      const nameIcon = document.getElementById("sortIconPendingName");
-
-      if (idIcon) idIcon.textContent = pendingSortField === "id" ? (pendingSortDirection === "asc" ? "▲" : "▼") : "↕";
-      if (nameIcon) nameIcon.textContent = pendingSortField === "name" ? (pendingSortDirection === "asc" ? "▲" : "▼") : "↕";
-    }
-    
     function triggerWhatsAppDispatch(data) {
       let msg = "";
       if (data.type === "leave") {

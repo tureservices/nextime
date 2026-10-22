@@ -533,20 +533,34 @@
       return await res.json();
     }
 
-    function showDashAlert(type, msg) {
+function showDashAlert(type, msg, actionUrl = null) {
       const box = document.getElementById("dashAlert");
       if (alertTimeout) clearTimeout(alertTimeout);
 
-      box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all duration-300 ${
-        type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+      box.className = `mb-4 p-3 rounded-lg text-xs font-medium transition-all duration-300 flex items-center justify-between ${
+        type === 'error' 
+          ? 'bg-rose-50 text-rose-700 border border-rose-200' 
+          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
       }`;
-      box.textContent = msg;
+
+      box.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>${type === 'error' ? '⚠️' : '✅'}</span>
+          <span>${msg}</span>
+        </div>
+        ${actionUrl ? `
+          <a href="${actionUrl}" target="_blank" rel="noopener noreferrer" class="ml-3 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold text-[11px] shadow transition whitespace-nowrap flex items-center gap-1">
+            <span>💬 Buka WhatsApp</span>
+          </a>
+        ` : ''}
+      `;
+
       box.classList.remove("hidden", "fade-out");
 
       alertTimeout = setTimeout(() => {
         box.classList.add("fade-out");
         setTimeout(() => box.classList.add("hidden"), 300);
-      }, 2500);
+      }, actionUrl ? 5000 : 2500);
     }
 
     function logout() {
@@ -1402,7 +1416,30 @@
       }
     });
 
-    async function executeApproval(type, recordId, decision) {
+async function executeApproval(type, recordId, decision) {
+      // 1. Buka tab kosong lebih awal saat klik user masih aktif (menghindari blokir browser)
+      let waTab = null;
+      try {
+        waTab = window.open("", "_blank");
+        if (waTab) {
+          waTab.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Menghubungkan ke WhatsApp...</title></head>
+            <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#1e293b;">
+              <div style="text-align:center;padding:24px;">
+                <div style="font-size:32px;margin-bottom:12px;">💬</div>
+                <h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">Menghubungkan ke WhatsApp...</h3>
+                <p style="margin:0;font-size:12px;color:#64748b;">Menyimpan status persetujuan di NexTime.</p>
+              </div>
+            </body>
+            </html>
+          `);
+        }
+      } catch (err) {
+        console.warn("Popup pre-open notice:", err);
+      }
+
       try {
         const res = await callApi({
           action: "processApproval",
@@ -1414,16 +1451,23 @@
         });
 
         if (res.status === "success") {
-          showDashAlert("success", res.message);
           loadDashboardData();
 
+          let waUrl = null;
           if (res.whatsappData && res.whatsappData.phone) {
-            triggerWhatsAppDispatch(res.whatsappData);
+            // Panggil triggerWhatsAppDispatch dengan menyertakan waTab
+            waUrl = triggerWhatsAppDispatch(res.whatsappData, waTab);
+          } else {
+            if (waTab) waTab.close();
           }
+
+          showDashAlert("success", res.message, waUrl);
         } else {
+          if (waTab) waTab.close();
           showDashAlert("error", res.message);
         }
       } catch (err) {
+        if (waTab) waTab.close();
         showDashAlert("error", "Gagal memproses persetujuan: " + err.message);
       }
     }
@@ -1443,14 +1487,16 @@
       return (str.length > 5 && str.includes(":")) ? str.substring(0, 5) : str;
     }
 
-function triggerWhatsAppDispatch(data) {
+function triggerWhatsAppDispatch(data, preOpenedTab = null) {
+      if (!data || !data.phone) return null;
+
       let msg = "";
       if (data.type === "leave") {
         if (data.decision === "Disetujui") {
           msg = `Halo ${data.name}, pengajuan CUTI Anda telah DISETUJUI.\n\nDetail Cuti:\nTipe: ${data.leaveType}\nTanggal: ${data.startDate} s/d ${data.endDate}\nTotal: ${data.totalDays} Hari\nAlasan: ${data.reason}`;
           
+          // Sembunyikan Potong Cuti jika ada defisit/minus; ganti teks menjadi 'Potong Cuti' jika tidak ada defisit
           const hasDeficit = data.note && (data.note.toLowerCase().includes("defisit") || data.note.toLowerCase().includes("minus"));
-
           if (data.note) msg += `\nCatatan: ${data.note}`;
           if (!hasDeficit && data.deduction > 0) msg += `\nPotong Cuti: ${data.deduction} Hari`;
         } else {
@@ -1467,11 +1513,21 @@ function triggerWhatsAppDispatch(data) {
         }
       }
 
+      const cleanPhone = String(data.phone).replace(/[^0-9]/g, "");
+      if (!cleanPhone) return null;
+
       const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const domain = isMobile ? "https://api.whatsapp.com/send?phone=" : "https://web.whatsapp.com/send?phone=";
-      const targetUrl = `${domain}${data.phone}&text=${encodeURIComponent(msg)}`;
+      const targetUrl = `${domain}${cleanPhone}&text=${encodeURIComponent(msg)}`;
 
-      window.open(targetUrl, "_blank");
+      // Bypass Popup Blocker: jika tab sudah di-preopen, alihkan alamatnya
+      if (preOpenedTab && !preOpenedTab.closed) {
+        preOpenedTab.location.href = targetUrl;
+      } else {
+        window.open(targetUrl, "_blank");
+      }
+
+      return targetUrl;
     }
 
     loadDashboardData();

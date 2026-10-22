@@ -214,7 +214,7 @@
     </section>
   </main>
 
-  <!-- MODAL: POLICY FORM -->
+  <!-- MODAL: POLICY FORM (Supports 0 Days) -->
   <div id="modalPolicyForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6">
       <div class="flex justify-between items-center mb-4">
@@ -228,8 +228,8 @@
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Jatah Hari (Allowed Days)</label>
-          <input type="number" id="polDays" required min="1" max="90" value="2" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-          <span class="text-[10px] text-slate-400 mt-0.5 block">Hari cuti ini tidak akan memotong saldo cuti tahunan.</span>
+          <input type="number" id="polDays" required min="0" max="90" value="0" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+          <span class="text-[10px] text-slate-400 mt-0.5 block">Isi 0 jika tipe cuti ini memotong kuota tahunan atau tidak memberikan kompensasi gratis.</span>
         </div>
         <div class="flex justify-end space-x-2 pt-3">
           <button type="button" onclick="closeModal('modalPolicyForm')" class="px-3.5 py-2 border border-slate-200 text-slate-600 rounded-lg font-semibold">Batal</button>
@@ -275,7 +275,7 @@
     </div>
   </div>
 
-  <!-- MODAL: USER FORM (TWO-STEP PROGRESSIVE DISCLOSURE) -->
+  <!-- MODAL: USER FORM -->
   <div id="modalUserForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
       <div class="flex justify-between items-center mb-4">
@@ -284,18 +284,13 @@
       </div>
 
       <form id="formUserActual" onsubmit="submitUserForm(event)" class="space-y-3 text-xs">
-        
-        <!-- STEP 1: EMAIL INPUT & LIVE VALIDATION -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Email Karyawan</label>
           <input type="email" id="uEmail" required placeholder="user@company.com" oninput="handleEmailInputCheck()" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
-          
-          <!-- Instant Inline Database Feedback -->
           <div id="emailFeedbackBox" class="mt-1.5 hidden text-[11px] font-medium leading-relaxed"></div>
           <p id="uEmailHint" class="text-[10px] text-slate-400 mt-1 hidden">Email adalah identitas login unik dan tidak dapat diubah setelah dibuat.</p>
         </div>
 
-        <!-- STEP 2: REST OF FORM (LOCKED/HIDDEN UNTIL EMAIL IS CONFIRMED AVAILABLE) -->
         <div id="userRestOfForm" class="hidden space-y-3 pt-3 border-t border-slate-100 transition-all">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
@@ -328,11 +323,9 @@
           </div>
         </div>
 
-        <!-- Default Cancel button when Step 2 is still hidden -->
         <div id="step1Actions" class="flex justify-end pt-2">
           <button type="button" onclick="closeModal('modalUserForm')" class="px-3.5 py-2 border border-slate-200 text-slate-600 rounded-lg font-semibold hover:bg-slate-50">Batal</button>
         </div>
-
       </form>
     </div>
   </div>
@@ -487,7 +480,7 @@
       return diffMin / 60;
     }
 
-function renderActiveReport() {
+    function renderActiveReport() {
       const startFilter = document.getElementById("repFilterStart")?.value || "";
       const endFilter = document.getElementById("repFilterEnd")?.value || "";
       const statusFilter = document.getElementById("repFilterStatus")?.value || "ALL";
@@ -522,8 +515,10 @@ function renderActiveReport() {
 
         const sickMcuDcDays = approvedReq.filter(r => {
           const lower = (r.leaveType || "").toLowerCase();
+          const isWithoutDc = lower.includes("tanpa") || lower.includes("tidak") || lower.includes("without") || lower.includes("non-dc") || lower.includes("no dc");
           return (lower.includes("sakit") || lower.includes("mcu") || lower.includes("medical checkup")) &&
-                 (lower.includes("surat") || lower.includes("dc") || lower.includes("dokter"));
+                 !isWithoutDc &&
+                 (lower.includes("surat") || lower.includes("dc") || lower.includes("dokter") || lower.includes("dengan"));
         }).reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
 
         kpiBox.innerHTML = `
@@ -683,7 +678,7 @@ function renderActiveReport() {
       }
     }
 
-    // ── CSV Export (Audit Trail Included) ──
+    // ── CSV Export ──
     function exportCurrentReportCsv() {
       if (!currentFilteredReport || currentFilteredReport.length === 0) {
         return showAlert("error", "Tidak ada data laporan untuk diexport sesuai filter yang dipilih.");
@@ -708,7 +703,7 @@ function renderActiveReport() {
       }
     }
 
-    // ── Master Tables (Dukungan Saldo Minus) ──
+    // ── Master Tables ──
     function renderEmpMasterTable() {
       const tbody = document.getElementById("empMasterTbody");
       const q = (document.getElementById("filterEmp")?.value || "").toLowerCase();
@@ -810,7 +805,6 @@ function renderActiveReport() {
         return;
       }
 
-      // Check Email Format first
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(rawEmail)) {
         feedback.className = "mt-1.5 text-[11px] font-medium text-slate-400 block";
@@ -824,30 +818,23 @@ function renderActiveReport() {
       feedback.className = "mt-1.5 text-[11px] font-medium text-blue-600 block";
       feedback.textContent = "Memeriksa database user...";
 
-      // 300ms Debounce Check
       emailDebounceTimer = setTimeout(() => {
         const existing = (masterData.users || []).find(u => String(u.email || "").trim().toLowerCase() === rawEmail);
 
         if (existing) {
-          // EMAIL EXISTS IN DB: BLOCK PROGRESSION
           emailInput.className = "w-full p-2.5 border border-rose-500 bg-rose-50/40 rounded-lg focus:ring-2 focus:ring-rose-500 transition";
           feedback.className = "mt-1.5 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] block";
           feedback.innerHTML = `<strong>Email '${rawEmail}' sudah terdaftar</strong> atas nama <strong>${existing.fullName}</strong>. Tidak bisa membuat user ganda.`;
           
-          // Keep Nama Lengkap & rest of form HIDDEN
           restOfForm.classList.add("hidden");
           step1Actions.classList.remove("hidden");
         } else {
-          // EMAIL IS FREE: UNLOCK NAMA LENGKAP & REST OF FORM
           emailInput.className = "w-full p-2.5 border border-emerald-500 bg-emerald-50/20 rounded-lg focus:ring-2 focus:ring-emerald-500 transition";
           feedback.className = "mt-1.5 text-[11px] font-semibold text-emerald-600 block";
           feedback.innerHTML = `Email tersedia. Silakan lengkapi nama dan hak akses di bawah:`;
           
-          // REVEAL NAMA LENGKAP & REST OF FORM
           restOfForm.classList.remove("hidden");
           step1Actions.classList.add("hidden");
-          
-          // Auto-focus directly into Nama Lengkap
           document.getElementById("uName").focus();
         }
       }, 300);
@@ -865,7 +852,6 @@ function renderActiveReport() {
       document.getElementById("emailFeedbackBox").className = "hidden";
       document.getElementById("uEmailHint").classList.add("hidden");
       
-      // Lock and hide Step 2
       document.getElementById("userRestOfForm").classList.add("hidden");
       document.getElementById("step1Actions").classList.remove("hidden");
 
@@ -889,7 +875,6 @@ function renderActiveReport() {
       document.getElementById("emailFeedbackBox").className = "hidden";
       document.getElementById("uEmailHint").classList.remove("hidden");
 
-      // In edit mode, show all fields immediately
       document.getElementById("userRestOfForm").classList.remove("hidden");
       document.getElementById("step1Actions").classList.add("hidden");
 
@@ -906,7 +891,6 @@ function renderActiveReport() {
       e.preventDefault();
       const enteredEmail = document.getElementById("uEmail").value.trim().toLowerCase();
 
-      // Final client check
       if (!isUserEditMode) {
         const exists = (masterData.users || []).some(u => u.email.toLowerCase() === enteredEmail);
         if (exists) {
@@ -950,7 +934,6 @@ function renderActiveReport() {
       }
     }
 
-    // ── Delete User Confirmation & Execution ──
     function confirmDeleteUser(email, name) {
       pendingDeleteEmail = email;
       document.getElementById("deleteUserDesc").innerHTML = `Apakah Anda yakin ingin menghapus user <strong>${name}</strong> (<span class="font-mono text-slate-700">${email}</span>)? User ini tidak akan dapat login lagi.`;
@@ -988,9 +971,10 @@ function renderActiveReport() {
       }
     }
 
-    // ── Policy Handlers ──
+    // ── Policy Handlers (Supports 0 Days) ──
     function openPolicyModal() {
       document.getElementById("formPolicyActual").reset();
+      document.getElementById("polDays").value = "0";
       openModal("modalPolicyForm");
     }
 
@@ -999,8 +983,8 @@ function renderActiveReport() {
       const type = document.getElementById("polType").value.trim();
       const days = parseInt(document.getElementById("polDays").value, 10);
 
-      if (!type || isNaN(days) || days <= 0) {
-        return showAlert("error", "Harap isi tipe cuti dan jumlah hari yang valid.");
+      if (!type || isNaN(days) || days < 0) {
+        return showAlert("error", "Harap isi tipe cuti dan jumlah hari yang valid (minimal 0).");
       }
 
       try {
@@ -1027,10 +1011,15 @@ function renderActiveReport() {
       const days = prompt(`Masukkan jumlah kuota hari untuk '${type}':`, currentDays);
       if (days === null) return;
       const num = parseInt(days, 10);
-      if (isNaN(num) || num < 0) return showAlert("error", "Angka hari tidak valid.");
+      if (isNaN(num) || num < 0) return showAlert("error", "Angka hari tidak valid (minimal 0).");
 
       try {
-        const res = await callApi({ action: "adminSavePolicy", policyData: { type: type, allowedDays: num }, email: currentUser.email, role: currentUser.role });
+        const res = await callApi({ 
+          action: "adminSavePolicy", 
+          policyData: { type: type, allowedDays: num }, 
+          email: currentUser.email, 
+          role: currentUser.role 
+        });
         if (res.status === "success") {
           showAlert("success", res.message);
           loadMasterData();
@@ -1155,7 +1144,6 @@ function renderActiveReport() {
       openModal("modalCsvPreview");
     }
 
-
     async function adminCancelRequest(type, recordId, empName, currentStatus) {
       const isApprovedLeave = type === "leave" && currentStatus === "Disetujui";
       const confirmMsg = `Batalkan pengajuan ${type === 'leave' ? 'cuti' : 'lembur'} (${recordId}) untuk ${empName}?` +
@@ -1182,7 +1170,6 @@ function renderActiveReport() {
         showAlert("error", "Gagal membatalkan pengajuan: " + err.message);
       }
     }
-
 
     async function commitCsvImport() {
       const btn = document.getElementById("btnCommitCsv");

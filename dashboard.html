@@ -744,7 +744,7 @@
       });
     });
 
-    // ── Total Days & Deduction Engine (Past Dates Fully Unlocked) ──
+// ── Real-Time Total Days & Cumulative Quota Deduction Engine ──
     function onDateOrTypeChange() {
       const reqType = document.getElementById("leaveReqType").value;
       const start = document.getElementById("leaveStart").value;
@@ -754,8 +754,10 @@
       const selectedType = document.getElementById("leaveTypeSelect").value;
       const empBalStr = document.getElementById("leaveEmpBalance").value;
       const empBalance = parseFloat(empBalStr) || 0.00;
+      const empId = document.getElementById("leaveEmpIdSelected").value;
+      const editId = document.getElementById("leaveEditId").value;
 
-      // Allow past dates without restriction
+      // Bebaskan tanggal lampau
       document.getElementById("leaveEnd").removeAttribute("min");
       document.getElementById("leaveStart").removeAttribute("min");
 
@@ -773,21 +775,42 @@
       }
       totalDaysInput.value = totalDays.toFixed(2);
 
-      // Kalkulasi potongan hak cuti tahunan
-      let neededAL = 0.00;
-      const policy = appData.policies.find(p => p.type === selectedType);
-      const allowed = policy ? policy.allowedDays : 0;
+      // 1. Identifikasi tipe surat dokter
       const lower = (selectedType || "").toLowerCase();
       const isSickOrMcu = lower.includes("sakit") || lower.includes("mcu") || lower.includes("medical checkup");
       const isWithoutDc = lower.includes("tanpa") || lower.includes("tidak") || lower.includes("without") || lower.includes("non-dc") || lower.includes("no dc");
       const hasDoctorCert = isSickOrMcu && !isWithoutDc && (lower.includes("surat") || lower.includes("dc") || lower.includes("dokter") || lower.includes("dengan"));
 
+      let neededAL = 0.00;
+
       if (hasDoctorCert) {
         neededAL = 0.00;
-      } else if (allowed > 0) {
-        neededAL = Math.max(0, totalDays - allowed);
       } else {
-        neededAL = totalDays;
+        const policy = appData.policies.find(p => p.type === selectedType);
+        const policyAllowed = policy ? Number(policy.allowedDays) || 0 : 0;
+
+        if (policyAllowed > 0) {
+          // 2. Hitung penggunaan kuota kumulatif oleh karyawan untuk cuti khusus ini
+          const currentYear = start ? new Date(start).getFullYear() : new Date().getFullYear();
+
+          const previousUsage = (appData.leaveRequests || []).filter(r => {
+            const isSameEmp = String(r.employeeId).trim().toUpperCase() === String(empId).trim().toUpperCase();
+            const isSameType = String(r.leaveType).trim().toLowerCase() === String(selectedType).trim().toLowerCase();
+            const isActiveStatus = r.status === "Disetujui" || r.status === "Pending";
+            const isNotCurrentEdit = String(r.leaveId) !== String(editId);
+            const rYear = r.startDate ? new Date(r.startDate).getFullYear() : currentYear;
+
+            return isSameEmp && isSameType && isActiveStatus && isNotCurrentEdit && (rYear === currentYear);
+          }).reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
+
+          // 3. Sisa hak cuti khusus yang tersedia
+          const remainingAllowed = Math.max(0, policyAllowed - previousUsage);
+
+          // 4. Hari yang melebihi sisa hak cuti khusus akan memotong AL
+          neededAL = Math.max(0, totalDays - remainingAllowed);
+        } else {
+          neededAL = totalDays;
+        }
       }
 
       deductionInput.value = neededAL.toFixed(1);

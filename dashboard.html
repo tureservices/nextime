@@ -1420,13 +1420,16 @@
       return (str.length > 5 && str.includes(":")) ? str.substring(0, 5) : str;
     }
 
-    function triggerWhatsAppDispatch(data) {
+function triggerWhatsAppDispatch(data) {
       let msg = "";
       if (data.type === "leave") {
         if (data.decision === "Disetujui") {
           msg = `Halo ${data.name}, pengajuan CUTI Anda telah DISETUJUI.\n\nDetail Cuti:\nTipe: ${data.leaveType}\nTanggal: ${data.startDate} s/d ${data.endDate}\nTotal: ${data.totalDays} Hari\nAlasan: ${data.reason}`;
+          
+          const hasDeficit = data.note && (data.note.toLowerCase().includes("defisit") || data.note.toLowerCase().includes("minus"));
+
           if (data.note) msg += `\nCatatan: ${data.note}`;
-          if (data.deduction > 0) msg += `\nPotong AL: ${data.deduction} Hari`;
+          if (!hasDeficit && data.deduction > 0) msg += `\nPotong Cuti: ${data.deduction} Hari`;
         } else {
           msg = `Halo ${data.name}, pengajuan CUTI Anda telah DITOLAK.\n\nDetail Cuti:\nTipe: ${data.leaveType}\nTanggal: ${data.startDate} s/d ${data.endDate}\nAlasan: ${data.reason}`;
         }
@@ -1441,7 +1444,7 @@
         }
       }
 
-      const isMobile = /Android|iPhone|iPad|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const domain = isMobile ? "https://api.whatsapp.com/send?phone=" : "https://web.whatsapp.com/send?phone=";
       const targetUrl = `${domain}${data.phone}&text=${encodeURIComponent(msg)}`;
 

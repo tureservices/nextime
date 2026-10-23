@@ -41,9 +41,10 @@
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- DAILY ATTENDANCE & ACTIVITY WIDGET -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+<!-- DAILY ATTENDANCE & ACTIVITY WIDGET (Standalone Heights) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 items-start">
+      <!-- Cuti Hari Ini Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
           <div class="flex items-center space-x-2.5">
             <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-base">🌴</div>
@@ -54,10 +55,11 @@
           </div>
           <span id="badgeTodayLeaveCount" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">0 Karyawan</span>
         </div>
-        <div id="todayLeaveContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs"></div>
+        <div id="todayLeaveContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs"></div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+      <!-- Lembur Hari Ini Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
           <div class="flex items-center space-x-2.5">
             <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">⏱️</div>
@@ -68,7 +70,7 @@
           </div>
           <span id="badgeTodayOtCount" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">0 Karyawan</span>
         </div>
-        <div id="todayOtContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs"></div>
+        <div id="todayOtContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs"></div>
       </div>
     </div>
 

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexTime - Data Archival & Maintenance Console</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style> 
+    body { font-family: 'Inter', sans-serif; } 
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+    .cursor-blink { animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 bg-slate-900 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow">
+          📦
+        </div>
+        <div>
+          <span class="font-bold text-base text-slate-900 tracking-tight">NexTime Data Archival Console</span>
+          <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Cold Storage & Purge Engine</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <a href="admin.html" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">
+          ← Kembali ke Admin Panel
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Top Alert Banner -->
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 shadow-sm flex items-start space-x-3">
+      <span class="text-xl">⚠️</span>
+      <div class="text-xs text-amber-800 leading-relaxed">
+        <strong>Pemberitahuan Sistem (Data Lifecycle):</strong> Tindakan ini akan memindahkan baris data cuti dan lembur yang terpilih dari spreadsheet operasional utama (<strong>Nextime_DB_DEV</strong>) ke <strong>Spreadsheet Arsip Baru</strong> di Google Drive. Data yang dipindahkan akan dihapus dari sistem aktif untuk menjaga performa database tetap ringan dan cepat.
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left Column: Controls & Filters -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <h3 class="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+          <span>⚙️</span> Parameter Pembersihan
+        </h3>
+
+        <!-- Date Range -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal (Start Date)</label>
+          <input type="date" id="archStartDate" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 bg-white">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal (End Date)</label>
+          <input type="date" id="archEndDate" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 bg-white">
+        </div>
+
+        <!-- Scope -->
+        <div class="pt-2 border-t border-slate-100">
+          <label class="block text-xs font-semibold text-slate-700 mb-2">Pilih Tabel Yang Dibersihkan</label>
+          <div class="space-y-2 text-xs">
+            <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-lg bg-slate-50 border border-slate-200">
+              <input type="checkbox" id="chkLeave" checked class="w-4 h-4 text-blue-600 rounded">
+              <span class="font-medium text-slate-800">Tabel Leave_Requests (Cuti)</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-lg bg-slate-50 border border-slate-200">
+              <input type="checkbox" id="chkOt" checked class="w-4 h-4 text-blue-600 rounded">
+              <span class="font-medium text-slate-800">Tabel Overtime_Records (Lembur)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Safeguard Option -->
+        <div class="pt-2 border-t border-slate-100">
+          <label class="flex items-start space-x-2 cursor-pointer p-2.5 rounded-lg bg-blue-50/70 border border-blue-200 text-xs">
+            <input type="checkbox" id="chkExcludePending" checked class="w-4 h-4 text-blue-600 rounded mt-0.5">
+            <div class="text-blue-900 leading-tight">
+              <strong>Proteksi Status Pending (Disarankan)</strong>
+              <p class="text-[11px] text-blue-700 mt-0.5">Pengajuan yang masih berstatus 'Pending' tidak akan dipindahkan agar proses persetujuan approver tidak terputus.</p>
+            </div>
+          </label>
+        </div>
+
+        <!-- Run Action -->
+        <div class="pt-3">
+          <button type="button" id="btnTriggerArchive" onclick="confirmAndExecuteArchive()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center justify-center gap-2">
+            <span>🚀</span> Eksekusi Arsip & Pembersihan
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Column: Terminal Console Screen -->
+      <div class="lg:col-span-2 flex flex-col">
+        <div class="bg-slate-950 rounded-2xl shadow-xl border border-slate-800 overflow-hidden flex flex-col h-full min-h-[500px]">
+          
+          <!-- Terminal Titlebar -->
+          <div class="bg-slate-900 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+              <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+              <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+              <span class="text-xs font-mono-code text-slate-400 ml-2">nextime-archival-worker v2.4</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="clearTerminal()" class="text-[11px] text-slate-400 hover:text-white font-mono-code px-2 py-0.5 rounded bg-slate-800">Clear</button>
+              <button onclick="copyTerminalLogs()" class="text-[11px] text-slate-400 hover:text-white font-mono-code px-2 py-0.5 rounded bg-slate-800">Copy</button>
+            </div>
+          </div>
+
+          <!-- Terminal Output Body -->
+          <div id="terminalScreen" class="p-4 overflow-y-auto flex-1 font-mono-code text-xs text-emerald-400 leading-relaxed space-y-1.5">
+            <div class="text-slate-500">// NexTime Cold Storage Maintenance Console initialized.</div>
+            <div class="text-slate-500">// Menunggu instruksi administrator...</div>
+            <div id="terminalLivePrompt" class="text-slate-400 flex items-center gap-1.5">
+              <span>admin@nextime:~$</span>
+              <span class="cursor-blink bg-emerald-400 w-2 h-4 inline-block"></span>
+            </div>
+          </div>
+
+          <!-- Bottom Action Bar on Finish -->
+          <div id="archiveResultCard" class="hidden bg-slate-900 border-t border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="text-xs text-slate-300">
+              <span class="text-emerald-400 font-bold">✔ Sukses:</span> File arsip siap diakses.
+            </div>
+            <a id="btnOpenArchiveLink" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg shadow flex items-center gap-1.5 transition">
+              <span>📊 Buka Spreadsheet Arsip</span> <span>↗</span>
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxO0spFhKspoBXznN-fKjbRtdP6R4mnCdLNxiX4oUhD4dRZEVjpfwY392b-nvbPtzQw/exec";
+
+    // ── RBAC Check ──
+    const userStr = localStorage.getItem("nextime_user");
+    if (!userStr) window.location.href = "index.html";
+    const currentUser = JSON.parse(userStr);
+
+    const userRoleClean = String(currentUser.role || "").trim().toLowerCase();
+    if (!["administrator"].includes(userRoleClean)) {
+      alert("Akses Terbatas: Hanya Administrator yang berwenang membuka halaman ini.");
+      window.location.href = "dashboard.html";
+    }
+
+    // Set Default Date Range to Previous Month
+    window.addEventListener("DOMContentLoaded", () => {
+      const d = new Date();
+      const endDefault = new Date(d.getFullYear(), d.getMonth(), 0); // Last day of prev month
+      const startDefault = new Date(endDefault.getFullYear(), endDefault.getMonth(), 1); // 1st day of prev month
+
+      document.getElementById("archStartDate").value = formatIsoDate(startDefault);
+      document.getElementById("archEndDate").value = formatIsoDate(endDefault);
+    });
+
+    function formatIsoDate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function printToTerminal(text, type = "info") {
+      const screen = document.getElementById("terminalScreen");
+      const prompt = document.getElementById("terminalLivePrompt");
+
+      const line = document.createElement("div");
+      if (type === "success") line.className = "text-emerald-300 font-bold";
+      else if (type === "warn") line.className = "text-amber-300";
+      else if (type === "error") line.className = "text-rose-400 font-bold";
+      else line.className = "text-slate-300";
+
+      line.textContent = text;
+      screen.insertBefore(line, prompt);
+      screen.scrollTop = screen.scrollHeight;
+    }
+
+    function clearTerminal() {
+      const screen = document.getElementById("terminalScreen");
+      const prompt = document.getElementById("terminalLivePrompt");
+      screen.innerHTML = "";
+      screen.appendChild(prompt);
+      document.getElementById("archiveResultCard").classList.add("hidden");
+    }
+
+    function copyTerminalLogs() {
+      const screen = document.getElementById("terminalScreen");
+      navigator.clipboard.writeText(screen.innerText).then(() => {
+        alert("Log terminal berhasil disalin.");
+      });
+    }
+
+    async function confirmAndExecuteArchive() {
+      const start = document.getElementById("archStartDate").value;
+      const end = document.getElementById("archEndDate").value;
+      const chkLeave = document.getElementById("chkLeave").checked;
+      const chkOt = document.getElementById("chkOt").checked;
+      const excludePending = document.getElementById("chkExcludePending").checked;
+
+      if (!start || !end) {
+        return alert("Harap tentukan tanggal mulai dan tanggal akhir.");
+      }
+
+      if (end < start) {
+        return alert("Tanggal akhir tidak boleh lebih awal dari tanggal mulai.");
+      }
+
+      if (!chkLeave && !chkOt) {
+        return alert("Pilih minimal satu tabel yang akan diarsipkan.");
+      }
+
+      const scope = [];
+      if (chkLeave) scope.push("leave");
+      if (chkOt) scope.push("overtime");
+
+      const confirmText = `KONFIRMASI ARSIP DATA:\n\nPeriode: ${start} s/d ${end}\nTabel: ${scope.join(", ").toUpperCase()}\nProteksi Pending: ${excludePending ? 'AKTIF (Lewati Pending)' : 'NONAKTIF'}\n\nData yang dipindahkan akan dihapus dari tabel operasional Nextime_DB_DEV.\nLanjutkan?`;
+
+      if (!confirm(confirmText)) return;
+
+      const btn = document.getElementById("btnTriggerArchive");
+      btn.disabled = true;
+      btn.className = "w-full py-2.5 bg-slate-400 text-white rounded-xl text-xs font-bold shadow-md cursor-not-allowed";
+      btn.textContent = "Sedang Menjalankan Engine Arsip...";
+
+      document.getElementById("archiveResultCard").classList.add("hidden");
+
+      printToTerminal(`\n[INIT] Request pengarsipan dikirim ke server...`, "warn");
+      printToTerminal(`[AUTH] Administrator ID: ${currentUser.email}`, "info");
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "archiveData",
+            startDate: start,
+            endDate: end,
+            archiveScope: scope,
+            excludePending: excludePending,
+            email: currentUser.email,
+            role: currentUser.role
+          })
+        });
+
+        const res = await response.json();
+
+        // Print server-side execution logs step by step
+        if (res.logs && Array.isArray(res.logs)) {
+          res.logs.forEach(msg => {
+            if (msg.includes("[ERROR")) printToTerminal(msg, "error");
+            else if (msg.includes("[SELESAI]")) printToTerminal(msg, "success");
+            else printToTerminal(msg, "info");
+          });
+        }
+
+        if (res.status === "success") {
+          printToTerminal(`\n[STATUS] ${res.message}`, "success");
+          printToTerminal(`[COLD-STORAGE] URL: ${res.archiveUrl}`, "info");
+
+          // Reveal direct link button
+          const card = document.getElementById("archiveResultCard");
+          const link = document.getElementById("btnOpenArchiveLink");
+          link.href = res.archiveUrl;
+          card.classList.remove("hidden");
+        } else {
+          printToTerminal(`\n[GAGAL] ${res.message}`, "error");
+        }
+
+      } catch (err) {
+        printToTerminal(`[KONEKSI GAGAL] Tidak dapat menghubungi server Apps Script: ${err.message}`, "error");
+      } finally {
+        btn.disabled = false;
+        btn.className = "w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center justify-center gap-2";
+        btn.innerHTML = "<span>🚀</span> Eksekusi Arsip & Pembersihan";
+      }
+    }
+  </script>
+</body>
+</html>

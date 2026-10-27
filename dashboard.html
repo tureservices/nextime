@@ -982,114 +982,98 @@ function showDashAlert(type, msg, actionUrl = null) {
     }
 
     // ── Render Tab 1: Persetujuan Tertunda with Sorting & Edit ──
-    function renderPendingTable() {
-      updateSortIcons();
-      const tbody = document.getElementById("pendingTableBody");
-      const canApprove = isAuthorizedApprover(currentUser.role);
-      const userEmail = String(currentUser.email || "").toLowerCase();
-      const query = (document.getElementById("searchPending")?.value || "").toLowerCase();
+function renderPendingTable() {
+  updateSortIcons();
+  const tbody = document.getElementById("pendingTableBody");
+  const userRole = String(currentUser.role || "").trim().toLowerCase();
+  const userEmail = String(currentUser.email || "").toLowerCase();
+  const query = (document.getElementById("searchPending")?.value || "").toLowerCase();
 
-      let list = [
-        ...appData.leaveRequests.filter(r => r.status === "Pending").map(r => ({ ...r, _recordKind: "leave" })),
-        ...appData.overtimeRecords.filter(r => r.status === "Pending").map(r => ({ ...r, _recordKind: "overtime" }))
-      ];
+  const isTier1Role = ["supervisor", "factory manager", "sample manager"].includes(userRole);
+  const isTier2Role = ["hr", "administrator"].includes(userRole);
 
-      if (query) {
-        list = list.filter(r => {
-          if (r._recordKind === "leave") {
-            return (
-              r.employeeId.toLowerCase().includes(query) || 
-              r.employeeName.toLowerCase().includes(query) || 
-              r.leaveType.toLowerCase().includes(query) || 
-              r.reason.toLowerCase().includes(query)
-            );
-          } else {
-            return (
-              r.employeeId.toLowerCase().includes(query) || 
-              r.employeeName.toLowerCase().includes(query) || 
-              r.dayType.toLowerCase().includes(query) || 
-              (r.payrollPeriod || "").toLowerCase().includes(query) || 
-              r.reason.toLowerCase().includes(query)
-            );
-          }
-        });
-      }
+  // Both "Pending" and "Menunggu Persetujuan HR" are actionable pending states
+  let list = [
+    ...appData.leaveRequests.filter(r => r.status === "Pending" || r.status === "Menunggu Persetujuan HR").map(r => ({ ...r, _recordKind: "leave" })),
+    ...appData.overtimeRecords.filter(r => r.status === "Pending" || r.status === "Menunggu Persetujuan HR").map(r => ({ ...r, _recordKind: "overtime" }))
+  ];
 
-      if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada pengajuan yang cocok dengan pencarian.</td></tr>';
-        return;
-      }
+  if (query) {
+    list = list.filter(r => 
+      (r.employeeId || "").toLowerCase().includes(query) || 
+      (r.employeeName || "").toLowerCase().includes(query) || 
+      (r.reason || "").toLowerCase().includes(query)
+    );
+  }
 
-      if (pendingSortField === "id") {
-        list.sort((a, b) => {
-          const res = a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true, sensitivity: "base" });
-          return pendingSortDirection === "asc" ? res : -res;
-        });
-      } else if (pendingSortField === "name") {
-        list.sort((a, b) => {
-          const res = a.employeeName.localeCompare(b.employeeName, undefined, { sensitivity: "base" });
-          return pendingSortDirection === "asc" ? res : -res;
-        });
-      }
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada pengajuan yang memerlukan tindakan persetujuan.</td></tr>';
+    return;
+  }
 
-      let html = "";
-      list.forEach(r => {
-        const isSubmitter = String(r.submittedBy || "").toLowerCase() === userEmail;
-        const canEdit = canApprove || isSubmitter;
+  let html = "";
+  list.forEach(r => {
+    const isSubmitter = String(r.submittedBy || "").toLowerCase() === userEmail;
+    const isLeave = r._recordKind === "leave";
+    const recordId = isLeave ? r.leaveId : r.overtimeId;
+    const canEdit = isSubmitter && r.status === "Pending";
 
-        if (r._recordKind === "leave") {
-          html += `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">CUTI</span></td>
-              <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
-              <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.rules}</span></td>
-              <td class="p-3">${r.leaveType}<br><span class="text-slate-400 font-medium">${r.totalDays} Hari (${r.requestType})</span></td>
-              <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
-              <td class="p-3">${r.reason}${r.note ? `<br><span class="text-amber-600 font-semibold text-[10px] bg-amber-50 px-1 py-0.5 rounded border border-amber-200">${r.note}</span>` : ''}</td>
-              <td class="p-3 text-right">
-                <div class="inline-flex items-center space-x-1.5">
-                  ${canEdit ? `
-                    <button onclick="openEditLeave('${r.leaveId}')" class="text-amber-600 hover:text-amber-800 font-semibold text-[11px] bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded border border-amber-200 transition">
-                      Edit
-                    </button>
-                  ` : ''}
-                  ${canApprove ? `
-                    <button onclick="requestApprovalConfirmation('leave', '${r.leaveId}', 'Disetujui', '${r.employeeName}', '${r.employeeId}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-medium">Setujui</button>
-                    <button onclick="requestApprovalConfirmation('leave', '${r.leaveId}', 'Ditolak', '${r.employeeName}', '${r.employeeId}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded font-medium">Tolak</button>
-                  ` : (!canEdit ? '<span class="text-slate-400 italic">Menunggu Review</span>' : '')}
-                </div>
-              </td>
-            </tr>
-          `;
-        } else {
-          html += `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">LEMBUR</span></td>
-              <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
-              <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.rules}</span></td>
-              <td class="p-3">${r.dayType}<br><span class="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">${r.payrollPeriod || '-'}</span></td>
-              <td class="p-3">${r.date}<br><span class="text-slate-400 font-medium">${r.startTime} - ${r.endTime}</span></td>
-              <td class="p-3">${r.reason}</td>
-              <td class="p-3 text-right">
-                <div class="inline-flex items-center space-x-1.5">
-                  ${canEdit ? `
-                    <button onclick="openEditOvertime('${r.overtimeId}')" class="text-amber-600 hover:text-amber-800 font-semibold text-[11px] bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded border border-amber-200 transition">
-                      Edit
-                    </button>
-                  ` : ''}
-                  ${canApprove ? `
-                    <button onclick="requestApprovalConfirmation('overtime', '${r.overtimeId}', 'Disetujui', '${r.employeeName}', '${r.employeeId}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded font-medium">Setujui</button>
-                    <button onclick="requestApprovalConfirmation('overtime', '${r.overtimeId}', 'Ditolak', '${r.employeeName}', '${r.employeeId}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded font-medium">Tolak</button>
-                  ` : (!canEdit ? '<span class="text-slate-400 italic">Menunggu Review</span>' : '')}
-                </div>
-              </td>
-            </tr>
-          `;
-        }
-      });
+    // Determine current stage & user approval rights
+    const isWaitingL1 = r.status === "Pending";
+    const isWaitingL2 = r.status === "Menunggu Persetujuan HR";
 
-      tbody.innerHTML = html;
-    }
+    const canUserApprove = (isWaitingL1 && (isTier1Role || isTier2Role)) || 
+                           (isWaitingL2 && isTier2Role);
+
+    const stageBadge = isWaitingL1
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Menunggu SPV/Manager</span>'
+      : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800" title="Disetujui SPV: ${r.l1ApprovedBy || '-'}">Menunggu HR (L1: ✓)</span>`;
+
+    const detailText = isLeave
+      ? `${r.leaveType}<br><span class="text-slate-400 font-medium">${r.totalDays} Hari (${r.requestType})</span>`
+      : `${r.dayType}<br><span class="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">${r.payrollPeriod || '-'}</span>`;
+
+    const dateText = isLeave
+      ? `${r.startDate} s/d ${r.endDate}`
+      : `${r.date}<br><span class="text-slate-400 font-medium">${r.startTime} - ${r.endTime}</span>`;
+
+    html += `
+      <tr class="hover:bg-slate-50 transition">
+        <td class="p-3">
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isLeave ? 'bg-blue-100 text-blue-800' : 'bg-indigo-100 text-indigo-800'}">
+            ${isLeave ? 'CUTI' : 'LEMBUR'}
+          </span>
+          <div class="mt-1">${stageBadge}</div>
+        </td>
+        <td class="p-3 font-semibold text-slate-900">${r.employeeId}</td>
+        <td class="p-3"><strong>${r.employeeName}</strong><br><span class="text-slate-400">${r.rules}</span></td>
+        <td class="p-3">${detailText}</td>
+        <td class="p-3">${dateText}</td>
+        <td class="p-3">${r.reason}${r.note ? `<br><span class="text-amber-600 font-semibold text-[10px]">${r.note}</span>` : ''}</td>
+        <td class="p-3 text-right">
+          <div class="inline-flex items-center space-x-1.5">
+            ${canEdit ? `
+              <button onclick="${isLeave ? `openEditLeave('${recordId}')` : `openEditOvertime('${recordId}')`}" class="text-amber-600 hover:text-amber-800 font-semibold text-[11px] bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded border border-amber-200 transition">
+                Edit
+              </button>
+            ` : ''}
+
+            ${canUserApprove ? `
+              <button onclick="requestApprovalConfirmation('${r._recordKind}', '${recordId}', 'Disetujui', '${r.employeeName}', '${r.employeeId}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-medium text-xs">
+                ${isWaitingL1 ? 'Setujui (L1)' : 'Setujui (HR)'}
+              </button>
+              <button onclick="requestApprovalConfirmation('${r._recordKind}', '${recordId}', 'Ditolak', '${r.employeeName}', '${r.employeeId}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded font-medium text-xs">
+                Tolak
+              </button>
+            ` : (!canEdit ? `<span class="text-slate-400 italic text-[11px]">${isWaitingL2 ? 'Menunggu Review HR' : 'Menunggu SPV'}</span>` : '')}
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
 
     // ── Render Tabs 2 & 3: Riwayat Cuti & Riwayat Lembur ──
     function renderHistoryTables() {
@@ -1427,60 +1411,64 @@ function showDashAlert(type, msg, actionUrl = null) {
     });
 
 async function executeApproval(type, recordId, decision) {
-      // 1. Buka tab kosong lebih awal saat klik user masih aktif (menghindari blokir browser)
-      let waTab = null;
-      try {
-        waTab = window.open("", "_blank");
-        if (waTab) {
-          waTab.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head><title>Menghubungkan ke WhatsApp...</title></head>
-            <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#1e293b;">
-              <div style="text-align:center;padding:24px;">
-                <div style="font-size:32px;margin-bottom:12px;">💬</div>
-                <h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">Menghubungkan ke WhatsApp...</h3>
-                <p style="margin:0;font-size:12px;color:#64748b;">Menyimpan status persetujuan di NexTime.</p>
-              </div>
-            </body>
-            </html>
-          `);
-        }
-      } catch (err) {
-        console.warn("Popup pre-open notice:", err);
+  const userRole = String(currentUser.role || "").trim().toLowerCase();
+  const isFinalRole = ["hr", "administrator"].includes(userRole);
+
+  // Pre-open tab ONLY if user is HR/Administrator approving, to avoid unwanted blank tabs for SPV
+  let waTab = null;
+  if (isFinalRole && decision === "Disetujui") {
+    try {
+      waTab = window.open("", "_blank");
+      if (waTab) {
+        waTab.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Menghubungkan ke WhatsApp...</title></head>
+          <body style="font-family: sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f8fafc;">
+            <div style="text-align:center;">
+              <h3>Menghubungkan ke WhatsApp HR...</h3>
+              <p style="font-size:12px; color:#64748b;">Memverifikasi status persetujuan akhir NexTime.</p>
+            </div>
+          </body>
+          </html>
+        `);
       }
-
-      try {
-        const res = await callApi({
-          action: "processApproval",
-          type: type,
-          id: recordId,
-          status: decision,
-          email: currentUser.email,
-          role: currentUser.role
-        });
-
-        if (res.status === "success") {
-          loadDashboardData();
-
-          let waUrl = null;
-          if (res.whatsappData && res.whatsappData.phone) {
-            // Panggil triggerWhatsAppDispatch dengan menyertakan waTab
-            waUrl = triggerWhatsAppDispatch(res.whatsappData, waTab);
-          } else {
-            if (waTab) waTab.close();
-          }
-
-          showDashAlert("success", res.message, waUrl);
-        } else {
-          if (waTab) waTab.close();
-          showDashAlert("error", res.message);
-        }
-      } catch (err) {
-        if (waTab) waTab.close();
-        showDashAlert("error", "Gagal memproses persetujuan: " + err.message);
-      }
+    } catch (err) {
+      console.warn("Popup notice:", err);
     }
+  }
+
+  try {
+    const res = await callApi({
+      action: "processApproval",
+      type: type,
+      id: recordId,
+      status: decision,
+      email: currentUser.email,
+      role: currentUser.role
+    });
+
+    if (res.status === "success") {
+      loadDashboardData();
+
+      let waUrl = null;
+      // Only dispatch WhatsApp if backend generated whatsappData (Tier 2 HR/Admin)
+      if (res.whatsappData && res.whatsappData.phone && isFinalRole) {
+        waUrl = triggerWhatsAppDispatch(res.whatsappData, waTab);
+      } else {
+        if (waTab) waTab.close();
+      }
+
+      showDashAlert("success", res.message, waUrl);
+    } else {
+      if (waTab) waTab.close();
+      showDashAlert("error", res.message);
+    }
+  } catch (err) {
+    if (waTab) waTab.close();
+    showDashAlert("error", "Gagal memproses persetujuan: " + err.message);
+  }
+}
 
     function formatTimeClean(val) {
       if (!val) return "";

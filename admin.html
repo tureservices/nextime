@@ -130,9 +130,11 @@
             <label class="block font-semibold text-slate-600 mb-1">Status Persetujuan</label>
             <select id="repFilterStatus" onchange="renderActiveReport()" class="w-full p-2 border border-slate-300 rounded-lg bg-white">
               <option value="ALL">Semua Status</option>
+              <option value="Pending">Pending (Menunggu SPV / Manager)</option>
+              <option value="Menunggu Persetujuan HR">Menunggu Persetujuan HR</option>
               <option value="Disetujui">Disetujui</option>
-              <option value="Pending">Pending</option>
               <option value="Ditolak">Ditolak</option>
+              <option value="Dibatalkan">Dibatalkan</option>
             </select>
           </div>
           <div>
@@ -147,7 +149,7 @@
           <table class="w-full text-left text-xs border-collapse">
             <thead id="reportTableHead" class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm"></thead>
             <tbody id="reportTableBody" class="divide-y divide-slate-100">
-              <tr><td colspan="7" class="p-4 text-center text-slate-400">Memuat laporan...</td></tr>
+              <tr><td colspan="8" class="p-4 text-center text-slate-400">Memuat laporan...</td></tr>
             </tbody>
           </table>
         </div>
@@ -303,9 +305,10 @@
             <label class="block font-semibold text-slate-700 mb-1">Role Persetujuan</label>
             <select id="uRole" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white">
               <option value="Basic">Basic (Staff Standard)</option>
-              <option value="HR">HR</option>
+              <option value="Supervisor">Supervisor</option>
               <option value="Factory Manager">Factory Manager</option>
               <option value="Sample Manager">Sample Manager</option>
+              <option value="HR">HR</option>
               <option value="Admin">Admin (Persetujuan & Operasional)</option>
               <option value="Administrator">Administrator (Super Admin / Setting)</option>
             </select>
@@ -416,6 +419,24 @@
       }, 3000);
     }
 
+    // ── Multi-Tier Status Badge Helper ──
+    function getStatusBadgeClass(status) {
+      switch (status) {
+        case 'Disetujui':
+          return 'bg-emerald-100 text-emerald-800';
+        case 'Menunggu Persetujuan HR':
+          return 'bg-purple-100 text-purple-800 border border-purple-200';
+        case 'Pending':
+          return 'bg-amber-100 text-amber-800';
+        case 'Ditolak':
+          return 'bg-rose-100 text-rose-800';
+        case 'Dibatalkan':
+          return 'bg-slate-200 text-slate-700';
+        default:
+          return 'bg-slate-100 text-slate-700';
+      }
+    }
+
     // ── Tab Navigation ──
     function switchAdminTab(tab) {
       ["emp", "reports", "users", "pol"].forEach(t => {
@@ -514,7 +535,7 @@
         const totalReq = records.length;
         const approvedReq = records.filter(r => r.status === "Disetujui");
         const totalApprovedDays = approvedReq.reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
-        const pendingCount = records.filter(r => r.status === "Pending").length;
+        const pendingCount = records.filter(r => r.status === "Pending" || r.status === "Menunggu Persetujuan HR").length;
 
         const sickMcuDcDays = approvedReq.filter(r => {
           const lower = (r.leaveType || "").toLowerCase();
@@ -562,10 +583,13 @@
         }
 
         tbody.innerHTML = records.map(r => {
-          const canCancel = r.status === "Pending" || r.status === "Disetujui";
-          const statusBadge = r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' :
-                             (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' :
-                             (r.status === 'Dibatalkan' ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-800'));
+          const canCancel = r.status === "Pending" || r.status === "Menunggu Persetujuan HR" || r.status === "Disetujui";
+          const statusBadge = getStatusBadgeClass(r.status);
+
+          let approverInfo = r.approvedBy || '-';
+          if (r.status === "Menunggu Persetujuan HR") {
+            approverInfo = `<span class="text-purple-700 font-semibold text-[11px]">SPV Disetujui</span><br><span class="text-[10px] text-slate-400">Menunggu HR</span>`;
+          }
 
           return `
             <tr class="hover:bg-slate-50 transition text-xs">
@@ -574,7 +598,7 @@
               <td class="p-3">${r.leaveType}<br><span class="text-slate-400 text-[11px]">${r.startDate} s/d ${r.endDate}</span></td>
               <td class="p-3 text-right font-bold text-slate-800">${Number(r.totalDays).toFixed(1)}</td>
               <td class="p-3 text-slate-600">${r.submittedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.submittedAt || ''}</span></td>
-              <td class="p-3 text-slate-600">${r.approvedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.approvedAt || ''}</span></td>
+              <td class="p-3 text-slate-600">${approverInfo}<br><span class="text-[10px] text-slate-400">${r.approvedAt && r.approvedAt !== '-' ? r.approvedAt : ''}</span></td>
               <td class="p-3 text-center">
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusBadge}">${r.status}</span>
               </td>
@@ -611,7 +635,7 @@
         const approvedReq = records.filter(r => r.status === "Disetujui");
         const totalHours = approvedReq.reduce((sum, r) => sum + calculateOtHours(r.startTime, r.endTime), 0);
         const holidayCount = approvedReq.filter(r => r.dayType && r.dayType.toLowerCase().includes("libur")).length;
-        const pendingCount = records.filter(r => r.status === "Pending").length;
+        const pendingCount = records.filter(r => r.status === "Pending" || r.status === "Menunggu Persetujuan HR").length;
 
         kpiBox.innerHTML = `
           <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
@@ -652,10 +676,13 @@
 
         tbody.innerHTML = records.map(r => {
           const duration = calculateOtHours(r.startTime, r.endTime);
-          const canCancel = r.status === "Pending" || r.status === "Disetujui";
-          const statusBadge = r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-800' :
-                             (r.status === 'Ditolak' ? 'bg-rose-100 text-rose-800' :
-                             (r.status === 'Dibatalkan' ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-800'));
+          const canCancel = r.status === "Pending" || r.status === "Menunggu Persetujuan HR" || r.status === "Disetujui";
+          const statusBadge = getStatusBadgeClass(r.status);
+
+          let approverInfo = r.approvedBy || '-';
+          if (r.status === "Menunggu Persetujuan HR") {
+            approverInfo = `<span class="text-purple-700 font-semibold text-[11px]">SPV Disetujui</span><br><span class="text-[10px] text-slate-400">Menunggu HR</span>`;
+          }
 
           return `
             <tr class="hover:bg-slate-50 transition text-xs">
@@ -664,7 +691,7 @@
               <td class="p-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">${r.payrollPeriod || '-'}</span> ${r.date}<br><span class="text-slate-400 text-[11px]">${r.startTime} s/d ${r.endTime} (${r.dayType})</span></td>
               <td class="p-3 text-right font-bold text-slate-800">${duration.toFixed(1)} Jam</td>
               <td class="p-3 text-slate-600">${r.submittedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.submittedAt || ''}</span></td>
-              <td class="p-3 text-slate-600">${r.approvedBy || '-'}<br><span class="text-[10px] text-slate-400">${r.approvedAt || ''}</span></td>
+              <td class="p-3 text-slate-600">${approverInfo}<br><span class="text-[10px] text-slate-400">${r.approvedAt && r.approvedAt !== '-' ? r.approvedAt : ''}</span></td>
               <td class="p-3 text-center">
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusBadge}">${r.status}</span>
               </td>

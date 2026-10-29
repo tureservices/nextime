@@ -43,6 +43,17 @@
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
+    <!-- Connection State Banner (Auto-Retry Bar) -->
+    <div id="connRetryBanner" class="hidden mb-4 p-3 rounded-xl text-xs font-medium bg-amber-50 text-amber-900 border border-amber-300 shadow-sm flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-amber-600 border-t-transparent rounded-full"></span>
+        <span id="connRetryText">Masalah koneksi terdeteksi. Menghubungkan kembali secara otomatis...</span>
+      </div>
+      <button onclick="loadDashboardData(true)" class="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded font-semibold text-[11px] transition">
+        Coba Sekarang
+      </button>
+    </div>
+
     <!-- DAILY ATTENDANCE & ACTIVITY WIDGET -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 items-start">
       <!-- Cuti Hari Ini Card -->
@@ -111,7 +122,7 @@
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center space-x-3">
             <h2 class="font-bold text-sm text-slate-800">Menunggu Persetujuan</h2>
-            <button onclick="loadDashboardData()" class="text-xs text-blue-600 hover:underline">Refresh Data</button>
+            <button onclick="loadDashboardData(true)" class="text-xs text-blue-600 hover:underline">Refresh Data</button>
           </div>
           
           <!-- Search & Sort Controls -->
@@ -171,7 +182,6 @@
           </div>
         </div>
         
-        <!-- Freeze Table Wrapper -->
         <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border-b border-slate-200">
           <table class="w-full text-left text-xs border-collapse">
             <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
@@ -202,7 +212,6 @@
           </div>
         </div>
         
-        <!-- Freeze Table Wrapper -->
         <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border-b border-slate-200">
           <table class="w-full text-left text-xs border-collapse">
             <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
@@ -236,7 +245,6 @@
           </div>
         </div>
         
-        <!-- Freeze Table Wrapper -->
         <div class="overflow-x-auto overflow-y-auto max-h-[65vh] border-b border-slate-200">
           <table class="w-full text-left text-xs border-collapse">
             <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0 z-10 shadow-sm">
@@ -326,8 +334,12 @@
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Total Days</label>
-            <input type="text" id="leaveTotalDays" value="0.00" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">
+            <div class="flex justify-between items-center mb-1">
+              <label class="block font-semibold text-slate-700">Total Days (Hari Kerja)</label>
+              <span class="text-[10px] text-slate-400 font-medium">Senin–Jumat (Libur & Akhir Pekan Dikecualikan)</span>
+            </div>
+            <input type="text" id="leaveTotalDays" value="0.00" readonly class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+            <div id="leaveWorkingDayNotice" class="hidden mt-1 text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200"></div>
           </div>
 
           <div>
@@ -476,6 +488,7 @@
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxO0spFhKspoBXznN-fKjbRtdP6R4mnCdLNxiX4oUhD4dRZEVjpfwY392b-nvbPtzQw/exec";
+    
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch((err) => {
@@ -511,6 +524,16 @@
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
 
+    // Standard Statutory Indonesian / Company Public Holidays Baseline (in case sheet is empty)
+    const BASE_PUBLIC_HOLIDAYS = [
+      { date: "2026-01-01", name: "Tahun Baru Masehi" },
+      { date: "2026-05-01", name: "Hari Buruh Internasional" },
+      { date: "2026-08-17", name: "Hari Kemerdekaan RI" },
+      { date: "2026-12-25", name: "Hari Raya Natal (Christmas)" },
+      { date: "2026-12-31", name: "Malam Tahun Baru (New Year Eve)" },
+      { date: "2027-01-01", name: "Tahun Baru Masehi" }
+    ];
+
     function getLocalIsoDate() {
       const d = new Date();
       const y = d.getFullYear();
@@ -523,8 +546,13 @@
     const formattedToday = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
     document.getElementById("leaveTanggalPengajuan").value = formattedToday;
 
-    let appData = { employees: [], policies: [], leaveRequests: [], overtimeRecords: [] };
+    let appData = { employees: [], policies: [], leaveRequests: [], overtimeRecords: [], holidays: [] };
     let alertTimeout = null;
+
+    // Auto-Retry Controller State
+    let dashboardRetryTimer = null;
+    let dashboardRetryCount = 0;
+    let isDashboardLoading = false;
 
     function isAuthorizedApprover(role) {
       if (!role) return false;
@@ -534,14 +562,44 @@
       ].includes(clean);
     }
 
-    async function callApi(payload) {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload),
-        redirect: "follow"
-      });
-      return await res.json();
+    // ── Resilient Enterprise API Client (Protected from Offline/HTML parser errors) ──
+    async function callApi(payload, timeoutMs = 15000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+          body: JSON.stringify(payload),
+          redirect: "follow",
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+
+        const rawText = await res.text();
+        
+        // Handle offline / empty string cleanly without crashing JSON parser
+        if (!rawText || rawText.trim() === "Offline") {
+          throw new Error("OFFLINE_NETWORK_ERROR");
+        }
+
+        try {
+          return JSON.parse(rawText);
+        } catch (jsonErr) {
+          console.warn("Non-JSON API response intercepted:", rawText.slice(0, 100));
+          throw new Error("SERVER_COMMUNICATION_ERROR");
+        }
+      } catch (err) {
+        clearTimeout(timer);
+        if (err.name === "AbortError") {
+          throw new Error("TIMEOUT_ERROR");
+        }
+        if (err.message === "OFFLINE_NETWORK_ERROR" || !navigator.onLine) {
+          throw new Error("OFFLINE_NETWORK_ERROR");
+        }
+        throw err;
+      }
     }
 
     function showDashAlert(type, msg, actionUrl = null) {
@@ -593,6 +651,70 @@
       });
     }
 
+    // ── Working Days Engine (Excludes Saturdays, Sundays, and Public Holidays) ──
+    function getActiveHolidayMap() {
+      const holidayMap = new Map();
+
+      // Seed baseline statutory holidays
+      BASE_PUBLIC_HOLIDAYS.forEach(h => {
+        holidayMap.set(h.date, h.name);
+      });
+
+      // Merge dynamic holidays from database
+      if (appData && Array.isArray(appData.holidays)) {
+        appData.holidays.forEach(h => {
+          if (typeof h === 'string') {
+            holidayMap.set(h.trim().slice(0, 10), "Hari Libur");
+          } else if (h && h.date) {
+            holidayMap.set(String(h.date).trim().slice(0, 10), h.name || "Hari Libur");
+          }
+        });
+      }
+
+      return holidayMap;
+    }
+
+    function calculateWorkingDaysDetailed(startDateStr, endDateStr) {
+      if (!startDateStr || !endDateStr) return { workingDays: 0, weekendDays: 0, holidayDays: 0, holidaysEncountered: [] };
+      if (endDateStr < startDateStr) return { workingDays: 0, weekendDays: 0, holidayDays: 0, holidaysEncountered: [] };
+
+      const holidayMap = getActiveHolidayMap();
+      const [sY, sM, sD] = startDateStr.split('-').map(Number);
+      const [eY, eM, eD] = endDateStr.split('-').map(Number);
+
+      const cur = new Date(sY, sM - 1, sD);
+      const end = new Date(eY, eM - 1, eD);
+
+      let workingDays = 0;
+      let weekendDays = 0;
+      let holidayDays = 0;
+      const holidaysEncountered = [];
+
+      while (cur <= end) {
+        const dayOfWeek = cur.getDay(); // 0 = Sunday, 6 = Saturday
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const d = String(cur.getDate()).padStart(2, '0');
+        const dateIso = `${y}-${m}-${d}`;
+
+        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+        const holidayName = holidayMap.get(dateIso);
+
+        if (isWeekend) {
+          weekendDays++;
+        } else if (holidayName) {
+          holidayDays++;
+          holidaysEncountered.push(`${dateIso} (${holidayName})`);
+        } else {
+          workingDays++;
+        }
+
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      return { workingDays, weekendDays, holidayDays, holidaysEncountered };
+    }
+
     // ── Open Modals in Fresh "Create" State ──
     function openCreateModal(type) {
       if (type === 'leave') {
@@ -608,6 +730,7 @@
         document.getElementById("payrollNoteContainer").classList.add("hidden");
         document.getElementById("leavePayrollNote").value = "";
         document.getElementById("leaveEmpDateTag").value = "";
+        document.getElementById("leaveWorkingDayNotice").classList.add("hidden");
         
         document.getElementById("leaveStart").removeAttribute("min");
         document.getElementById("leaveEnd").removeAttribute("min");
@@ -781,22 +904,39 @@
       const empBalance = parseFloat(empBalStr) || 0.00;
       const empId = document.getElementById("leaveEmpIdSelected").value;
       const editId = document.getElementById("leaveEditId").value;
+      const noticeBox = document.getElementById("leaveWorkingDayNotice");
 
       document.getElementById("leaveEnd").removeAttribute("min");
       document.getElementById("leaveStart").removeAttribute("min");
 
       let totalDays = 0.00;
 
-      if (reqType.startsWith("Half day")) {
-        totalDays = 0.50;
-      } else {
-        if (start && end) {
-          const d1 = new Date(start);
-          const d2 = new Date(end);
-          const diffDays = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-          totalDays = diffDays > 0 ? diffDays : 0.00;
+      if (start && end) {
+        const details = calculateWorkingDaysDetailed(start, end);
+        
+        if (reqType.startsWith("Half day")) {
+          // Half day counts as 0.5 only if the start date falls on an active working day
+          const startDetails = calculateWorkingDaysDetailed(start, start);
+          totalDays = startDetails.workingDays > 0 ? 0.50 : 0.00;
+        } else {
+          totalDays = details.workingDays;
         }
+
+        // Informative notice for excluded weekends or public holidays
+        const notices = [];
+        if (details.weekendDays > 0) notices.push(`${details.weekendDays} hari akhir pekan (Sabtu/Minggu) tidak dihitung`);
+        if (details.holidayDays > 0) notices.push(`${details.holidayDays} hari libur nasional (${details.holidaysEncountered.join(", ")}) tidak dihitung`);
+
+        if (notices.length > 0) {
+          noticeBox.innerHTML = `ℹ️ <strong>Penyesuaian Hari Kerja:</strong> ${notices.join(" & ")}.`;
+          noticeBox.classList.remove("hidden");
+        } else {
+          noticeBox.classList.add("hidden");
+        }
+      } else {
+        noticeBox.classList.add("hidden");
       }
+
       totalDaysInput.value = totalDays.toFixed(2);
 
       const lower = (selectedType || "").toLowerCase();
@@ -815,7 +955,6 @@
         if (policyAllowed > 0) {
           const currentYear = start ? new Date(start).getFullYear() : new Date().getFullYear();
 
-          // Include both 'Disetujui', 'Pending', and 'Menunggu Persetujuan HR'
           const previousUsage = (appData.leaveRequests || []).filter(r => {
             const isSameEmp = String(r.employeeId).trim().toUpperCase() === String(empId).trim().toUpperCase();
             const isSameType = String(r.leaveType).trim().toLowerCase() === String(selectedType).trim().toLowerCase();
@@ -916,13 +1055,30 @@
       }
     }
 
-    // ── Load Dashboard Data ──
-    async function loadDashboardData() {
+    // ── Load Dashboard Data with Self-Healing Auto-Retry ──
+    async function loadDashboardData(isManual = false) {
+      if (isDashboardLoading) return;
+      isDashboardLoading = true;
+
+      const connBanner = document.getElementById("connRetryBanner");
+      const connText = document.getElementById("connRetryText");
+
       try {
         const res = await callApi({ action: "getDashboardData", email: currentUser.email, role: currentUser.role });
+        
         if (res.status === "success") {
           appData = res;
+
+          // Clear retry states
+          dashboardRetryCount = 0;
+          if (dashboardRetryTimer) clearTimeout(dashboardRetryTimer);
+          dashboardRetryTimer = null;
           
+          if (!connBanner.classList.contains("hidden")) {
+            connBanner.classList.add("hidden");
+            showDashAlert("success", "Koneksi pulih. Data berhasil disinkronkan.");
+          }
+
           const polSelect = document.getElementById("leaveTypeSelect");
           polSelect.innerHTML = '<option value="">-- Pilih Leave Type --</option>' + 
             appData.policies.map(p => `<option value="${p.type}">${p.type} ${p.allowedDays > 0 ? '(' + p.allowedDays + ' Hari)' : ''}</option>`).join("");
@@ -935,9 +1091,28 @@
           showDashAlert("error", "Error server: " + res.message);
         }
       } catch (err) {
-        showDashAlert("error", "Koneksi gagal: " + err.message);
+        // Trigger Autonomous Exponential Retry
+        dashboardRetryCount++;
+        const backoffMs = Math.min(2000 * Math.pow(1.5, dashboardRetryCount - 1), 15000);
+        const retrySec = Math.round(backoffMs / 1000);
+
+        connText.textContent = `Masalah koneksi terdeteksi. Mencoba menghubungkan kembali otomatis dalam ${retrySec} detik... (Percobaan ke-${dashboardRetryCount})`;
+        connBanner.classList.remove("hidden");
+
+        if (dashboardRetryTimer) clearTimeout(dashboardRetryTimer);
+        dashboardRetryTimer = setTimeout(() => {
+          loadDashboardData();
+        }, backoffMs);
+      } finally {
+        isDashboardLoading = false;
       }
     }
+
+    // Immediate Reconnect on Network Restore
+    window.addEventListener("online", () => {
+      console.log("Device back online. Re-fetching fresh data...");
+      loadDashboardData(true);
+    });
 
     // ── Sorting State for Tab 1 ──
     let pendingSortField = ""; 
@@ -1016,7 +1191,6 @@
         });
       }
 
-      // Restored list.sort implementation
       if (pendingSortField === "id") {
         list.sort((a, b) => {
           const res = a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true, sensitivity: "base" });
@@ -1120,7 +1294,6 @@
         lBody.innerHTML = leaves.map(r => {
           const isSubmitter = String(r.submittedBy || "").toLowerCase() === userEmail;
           
-          // Support cancelling both Pending, Menunggu Persetujuan HR, and Disetujui
           const canCancel = ((r.status === "Pending" || r.status === "Menunggu Persetujuan HR") && (isSubmitter || isApprover)) ||
                             (r.status === "Disetujui" && isApprover);
           const canEdit = r.status === "Pending" && (isSubmitter || isApprover);
@@ -1136,7 +1309,7 @@
               <td class="p-3"><strong>${r.employeeName}</strong> <span class="text-slate-400 font-normal">(${r.rules})</span></td>
               <td class="p-3">${r.leaveType}</td>
               <td class="p-3">${r.startDate} s/d ${r.endDate}</td>
-              <td class="p-3">${r.totalDays} Hari</td>
+              <td class="p-3 font-semibold text-slate-800">${r.totalDays} Hari</td>
               <td class="p-3">${r.note ? `<span class="text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${r.note}</span>` : '-'}</td>
               <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusBadge}">${r.status}</span></td>
               <td class="p-3 text-right">
@@ -1276,6 +1449,11 @@
         return showDashAlert("error", "Tanggal selesai tidak boleh lebih awal dari tanggal mulai.");
       }
 
+      const totalDays = Number(document.getElementById("leaveTotalDays").value) || 0;
+      if (totalDays <= 0) {
+        return showDashAlert("error", "Ditolak: Periode yang dipilih tidak mencakup hari kerja (0 hari kerja).");
+      }
+
       const emp = appData.employees.find(e => e.id === empId);
       const payrollNote = document.getElementById("leavePayrollNote").value;
       const editId = document.getElementById("leaveEditId").value;
@@ -1289,7 +1467,7 @@
         requestType: document.getElementById("leaveReqType").value,
         startDate: start,
         endDate: end,
-        totalDays: document.getElementById("leaveTotalDays").value,
+        totalDays: totalDays,
         reason: document.getElementById("leaveReason").value,
         note: payrollNote || ""
       };
@@ -1298,13 +1476,17 @@
         ? { action: "updateLeave", id: editId, payload: payload, email: currentUser.email, role: currentUser.role }
         : { action: "submitLeave", payload: payload, email: currentUser.email };
 
-      const res = await callApi(reqBody);
-      if (res.status === "success") {
-        closeModal("modalLeave");
-        showDashAlert("success", res.message);
-        loadDashboardData();
-      } else {
-        showDashAlert("error", res.message);
+      try {
+        const res = await callApi(reqBody);
+        if (res.status === "success") {
+          closeModal("modalLeave");
+          showDashAlert("success", res.message);
+          loadDashboardData();
+        } else {
+          showDashAlert("error", res.message);
+        }
+      } catch (err) {
+        showDashAlert("error", "Gagal mengirim pengajuan cuti karena gangguan koneksi. Silakan periksa jaringan dan coba lagi.");
       }
     }
 
@@ -1337,13 +1519,17 @@
         ? { action: "updateOvertime", id: editId, payload: payload, email: currentUser.email, role: currentUser.role }
         : { action: "submitOvertime", payload: payload, email: currentUser.email };
 
-      const res = await callApi(reqBody);
-      if (res.status === "success") {
-        closeModal("modalOvertime");
-        showDashAlert("success", res.message);
-        loadDashboardData();
-      } else {
-        showDashAlert("error", res.message);
+      try {
+        const res = await callApi(reqBody);
+        if (res.status === "success") {
+          closeModal("modalOvertime");
+          showDashAlert("success", res.message);
+          loadDashboardData();
+        } else {
+          showDashAlert("error", res.message);
+        }
+      } catch (err) {
+        showDashAlert("error", "Gagal mengirim pengajuan lembur karena gangguan koneksi. Silakan coba lagi.");
       }
     }
 
@@ -1413,7 +1599,7 @@
             showDashAlert("error", res.message);
           }
         } catch (err) {
-          showDashAlert("error", "Gagal membatalkan: " + err.message);
+          showDashAlert("error", "Gagal membatalkan pengajuan karena kendala jaringan. Silakan ulangi.");
         }
       };
 
@@ -1440,7 +1626,6 @@
       const userRole = String(currentUser.role || "").trim().toLowerCase();
       const isFinalRole = ["hr", "administrator"].includes(userRole);
 
-      // Verify if target item is at Tier 2 (Waiting for HR) before opening WA tab
       const currentRec = (type === "leave" ? appData.leaveRequests : appData.overtimeRecords).find(x => 
         (type === "leave" ? x.leaveId : x.overtimeId) === recordId
       );
@@ -1496,7 +1681,7 @@
         }
       } catch (err) {
         if (waTab) waTab.close();
-        showDashAlert("error", "Gagal memproses persetujuan: " + err.message);
+        showDashAlert("error", "Gagal memproses persetujuan karena gangguan koneksi. Silakan ulangi.");
       }
     }
 
@@ -1556,6 +1741,7 @@
       return targetUrl;
     }
 
+    // Initial Load
     loadDashboardData();
   </script>
 </body>

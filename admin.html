@@ -833,8 +833,8 @@
       tbody.innerHTML = list.map(e => {
         const bal = Number(e.leaveBalance) || 0;
         const balDisplay = bal < 0 
-          ? `<span class="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">${bal.toFixed(2)} Hari (Minus)</span>`
-          : `<span class="font-bold text-slate-900">${bal.toFixed(2)} Hari</span>`;
+          ? `<span class="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">${bal.toFixed(1)} Hari (Minus)</span>`
+          : `<span class="font-bold text-slate-900">${bal.toFixed(1)} Hari</span>`;
 
         return `
           <tr class="hover:bg-slate-50 transition">
